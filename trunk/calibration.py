@@ -37,14 +37,14 @@ def CalibrationWindowThread(im):
             break
 
 def Calibration():
-        #capture = cv.CaptureFromCAM(0)
+    #capture = cv.CaptureFromCAM(0)
     #image = 0
 
     #cv.GrabFrame(capture)
     #image = cv.RetrieveFrame(capture)
     #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
     #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 720)
-    image = cv.LoadImage(str(r"Dartboard Left.jpg"),cv.CV_LOAD_IMAGE_UNCHANGED)
+    image = cv.LoadImage(str(r"dartboard_cam.bmp"),cv.CV_LOAD_IMAGE_UNCHANGED)
     new_image = cv.CloneImage(image)
 
     global points
@@ -79,11 +79,11 @@ def Calibration():
         print points[k]
 
     #calculate the desired circle dimensions
-    #the circle
-    newtop = (round(new_image.width/2), round(new_image.height * 0.20))
-    newbottom = (round(new_image.width/2), round(new_image.height * 0.80))
-    newleft = (round(new_image.width * 0.20), round(new_image.height/2))
-    newright = (round(new_image.width * 0.80), round(new_image.height/2))
+    newtop = (round(new_image.height/2), round(new_image.height * 0.20))
+    newbottom = (round(new_image.height/2), round(new_image.height * 0.80))
+    #Note: the height is smaller than the width
+    newleft = (round(new_image.height * 0.20), round(new_image.height/2))
+    newright = (round(new_image.height * 0.80), round(new_image.height/2))
 
     mapping = cv.CreateMat(3, 3, cv.CV_32FC1)
 
