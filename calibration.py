@@ -1,13 +1,11 @@
 #! /usr/bin/env python
-
-print "OpenCV Python version of edge"
-
 import sys
 import urllib2
 import cv
 from threading import Thread
 from threading import Event
 import time
+import math
 
 # some definitions
 window_name = "Capture from Cam!"
@@ -21,10 +19,8 @@ def on_mouse(event, x, y, flags, param):
         global points
         global e
         #counter
-        global clickCounter
         #append user clicked points        
         points.append((x,y))
-        clickCounter += 1
         e.set()
 
 
@@ -40,10 +36,8 @@ def CalibrationWindowThread(im):
         else:
             break
 
-if __name__ == '__main__':
-    print "Welcome to darts!"
-
-    #capture = cv.CaptureFromCAM(0)
+def Calibration():
+        #capture = cv.CaptureFromCAM(0)
     #image = 0
 
     #cv.GrabFrame(capture)
@@ -53,15 +47,16 @@ if __name__ == '__main__':
     image = cv.LoadImage(str(r"Dartboard Left.jpg"),cv.CV_LOAD_IMAGE_UNCHANGED)
     new_image = cv.CloneImage(image)
 
+    global points
     points = []
 
     #use two events to emulate wait for mouse click event
+    global e
+    global key
     e = Event()
     key = Event()
     t = Thread(target=CalibrationWindowThread,args=(image,));
     t.start()
-
-    clickCounter = 0
 
     print "Please select the center of the 20 points outermost rim."
     e.wait()
@@ -105,12 +100,15 @@ if __name__ == '__main__':
     e.clear()
     center_dartboard = points[4]
 
-    init_point = []
+    init_point_arr = []
     print "Please select the outermost intersection of the 20 points and 1 ponit line."
     e.wait()
     e.clear()
     init_point_arr = points[5]
 
+
+
+    #find initial angle of the 20-1 divider
     tempX_mat = cv.CreateMat(1, 1, cv.CV_32FC1)
     #correct the point with respect to the center
     cv.mSet( tempX_mat, 0, 0, init_point_arr[0] - center_dartboard[0] )
@@ -128,14 +126,14 @@ if __name__ == '__main__':
     print cv.mGet(init_mag_mat, 0, 0)
     print init_angle_val
 
-
+    #display dividers
     current_point = init_point_arr
     next_angle = cv.CreateMat(1, 1, cv.CV_32FC1)
     cv.mSet( next_angle, 0, 0, 360 - init_angle_val )
     temp_angle = 360.0 - init_angle_val
     #draw point dividers counterclockwise, just like how angle is calculated, arctan(y/x)
     for i in range(0, 20):
-        cv.Line(new_image, center_dartboard, current_point, cv.CV_RGB(255, 0, 0), 1, 8)
+        cv.Line(new_image, center_dartboard, current_point, cv.CV_RGB(0, 0, 255), 1, 8)
         #calculate the cartesian coordinate of the next point divider
         temp_angle = 360.0 - temp_angle
         temp_angle += + 18.0
@@ -154,20 +152,60 @@ if __name__ == '__main__':
         print current_point
         
     cv.ShowImage(window_name,new_image)
+    
 
+    ring_arr = []
+    print "Please select the first ring (any point). i.e. the ring that encloses the double bull's eye."
+    e.wait()
+    e.clear()
+    ring_arr.append(points[6])
+
+    print "Please select the second ring (any point). i.e. the ring that encloses the bull's eye."
+    e.wait()
+    e.clear()
+    ring_arr.append(points[7])
+
+    print "Please select the third ring (any point). i.e. the closer ring that encloses the triple score region."
+    e.wait()
+    e.clear()
+    ring_arr.append(points[8])
+
+    print "Please select the fourth ring (any point). i.e. the further ring that encloses the triple score region."
+    e.wait()
+    e.clear()
+    ring_arr.append(points[9])
+
+    print "Please select the fifth ring (any point). i.e. the closer ring that encloses the double score region."
+    e.wait()
+    e.clear()
+    ring_arr.append(points[10])
+
+    print "Please select the sixth ring (any point). i.e. the further ring that encloses the double score region."
+    e.wait()
+    e.clear()
+    ring_arr.append(points[11])
+
+    ring_radius_arr = []
+    for i in range(0,6):
+        #find the radius of the ring
+        ring_radius_arr.append(math.sqrt(( ring_arr[i][0] - center_dartboard[0] )** 2 + (ring_arr[i][1] - center_dartboard[1] )** 2))
+        #display the rings
+        cv.Circle(new_image, center_dartboard, ring_radius_arr[i], cv.CV_RGB(0, 255, 0), 1, 8)
+        
+    cv.ShowImage(window_name,new_image)
+    
     e.wait()
 
     #destroy calibration window
     key.set()
 
-
-    #for k in points[0]:
-     #   print points[0][k]
-
-    #for (i, j) in points:
-     #   print i
-     #   print j
-
+    global calibrationComplete
+    calibrationComplete = True
 
     #wait a key pressed to end
     # cv.WaitKey(0)
+
+if __name__ == '__main__':
+    print "Welcome to darts!"
+    Calibration()
+
