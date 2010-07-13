@@ -5,32 +5,35 @@ import threading
 import thread
 import pickle
 import os.path
+import ScoreKeeper
 
 # just a sample class so I can "create" dartThrows with the get throw function
 class dartThrow:
     def __init__(self):
-        self.score = -1
+        self.base = -1
+        self.multiplier = -1
         self.magnitude = -1
         self.angle = -1
 
     def printThrow(self):
-        print "Score:" + self.score + ", Magnitude: " + self.magnitude + ", Angle: " + self.angle
+        print "Score:" + self.score*self.multiplier + ", Magnitude: " + self.magnitude + ", Angle: " + self.angle
 
 #sample settings class
 class settings:
     def __init__(self):
         self.playerOne = "One"
         self.playerTwo = "Two"
-        self.gameType = 2 #1 is normal, 2 is practice
+        self.gameType = 1 #1 is normal, 2 is practice
     
 def getThrow():
     throw = dartThrow()
-    throw.score = input("Enter Score: ")
+    throw.base = input("Enter Base Region: ")
+    throw.multiplier = input("Enter Multiplier: ")
     throw.magnitude = input("Enter Magnitude: ")
     throw.angle = input("Enter Angle: ")
     
     # my hack of triggering an event =P
-    if throw.score == 1234:
+    if throw.base == 25:
         correctScore.set()
     return throw
 
@@ -45,17 +48,22 @@ class DartGame:
         self.playerOne = Player(settings.playerOne)
         self.playerTwo = Player(settings.playerTwo)
         self.gameType = settings.gameType
-        # game type 1 is a normal game of 501
-        if self.gameType == 1:
-            # Just temporary, because score keeper will handle this
-            self.playerOne.score = 501
-            self.playerTwo.score = 501
+        ## game type 1 is a normal game of 501
+        #if self.gameType == 1:
+            ## Just temporary, because score keeper will handle this
+            #self.playerOne.score = 501
+            #self.playerTwo.score = 501
         self.currentPlayer = self.playerOne
         self.dartsLeft = 3
         self.stillPlaying = True
         self.winner = None
     
     def switchPlayer(self):
+        # add the dart set to the current player
+        self.currentPlayer.throwHistory.append(scoreKeeper.currentDartSet)
+        # reset the current dart set
+        scoreKeeper.currentDartSet = [None, None, None]
+        # switch the current player
         if self.currentPlayer == self.playerOne:
             print "SWITCHED TO PLAYER TWO"
             self.currentPlayer = self.playerTwo
@@ -67,15 +75,19 @@ class DartGame:
     def updateScoreGame(self, throwResult):
         print "Updating Score"
         # this will be sent to/handled by the score keeper in the future
-        self.currentPlayer.score = self.currentPlayer.score - throwResult.score
+        # you can update score based on current player because players are linked to scoreKeeper
+        self.currentPlayer.score = self.currentPlayer.score - (throwResult.base * throwResult.multiplier)
+        # add the dart to the current dart set in the score keeper
+        scoreKeeper.currentDartSet[3-self.dartsLeft] = throwResult
         # if score is 0, the current player wins
-        if self.currentPlayer.score == 0:
+        if self.currentPlayer.score == 0 and throwResult.multiplier == 2:
             self.winner = self.currentPlayer
             self.stillPlaying = False
             return
         # if score is less than 0, it means the player busts, and their score resets, switches players
-        elif self.currentPlayer.score < 0:
-            self.currentPlayer.score =+ throwResult.score
+        # if the score is 0, it means the multiplier is NOT 2, they still bust
+        if self.currentPlayer.score <= 0:
+            self.currentPlayer.score = self.currentPlayer.score + (throwResult.base * throwResult.multiplier)
             self.switchPlayer()
             print self.currentPlayer.name + " BUSTED. Too bad!"
             return
@@ -118,6 +130,8 @@ class DartGame:
 def playGame (settings):
     print "Starting Game"
     game = DartGame(settings)
+    global scoreKeeper
+    scoreKeeper = ScoreKeeper.ScoreKeeper(game)
     while ( game.stillPlaying == True ):
         throwResult = getThrow()
         # uncomment to get it to print out dart throw
