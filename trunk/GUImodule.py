@@ -18,6 +18,10 @@ DARTBOARD_BLACK = '#1C1D18'
 DARTBOARD_RED = '#DD5035'
 DARTBOARD_GREEN = '#03845B'
 
+DARTS_HOME_POS = [ (10, 200), (10, 250), (10, 300), (760, 200), (760, 250), (760, 300)]
+
+DART_CENTER_X = 500
+DART_CENTER_Y = 250
 
 def LISTEN_EVENT(win, func):
     """Define Result Event."""
@@ -40,6 +44,9 @@ class MyCanvas(wx.Panel):
         mask = wx.Mask(bmp, '#010000') #make transparent bg
         bmp.SetMask(mask)
         self.bmp = bmp
+        
+        # dart ids
+        self.objids = []
         
         # create a PseudoDC to record our drawing
         self.pdc = wx.PseudoDC()
@@ -66,12 +73,12 @@ class MyCanvas(wx.Panel):
                 x,y = self.lastpos
                 dx = event.GetX() - x
                 dy = event.GetY() - y
-                r = self.pdc.GetIdBounds(self.dragid)
-                self.pdc.TranslateId(self.dragid, dx, dy)
-                r2 = self.pdc.GetIdBounds(self.dragid)
-                r = r.Union(r2)
-                r.Inflate(4,4)
-                self.RefreshRect(r, False)
+                r = self.pdc.GetIdBounds(self.dragid)       #get the previous location
+                self.pdc.TranslateId(self.dragid, dx, dy)   #find the new x,y
+                r2 = self.pdc.GetIdBounds(self.dragid)      #get the new location
+                r = r.Union(r2)                             #combine the two rectangles
+                r.Inflate(4,4)                              #inflate to compensate
+                self.RefreshRect(r, False)                  #repaint the rectangle
                 self.lastpos = (event.GetX(),event.GetY())
             if event.LeftUp():
                 self.dragid = -1
@@ -81,7 +88,7 @@ class MyCanvas(wx.Panel):
         # wx.PaintDC and then blit the bitmap to it when dc is
         # deleted.  
         dc = wx.BufferedPaintDC(self)
-        
+        #print 'paint'
         # use PrepateDC to set position correctly
         self.PrepareDC(dc)
         # we need to clear the dc BEFORE calling PrepareDC
@@ -107,13 +114,12 @@ class MyCanvas(wx.Panel):
         #Draw the dart board
         self.DoDrawDartBoard(dc)
     
-        self.objids = []
         dc.BeginDrawing()
-        for i in range(3):
+        for i in range(6):
             id = wx.NewId()
             dc.SetId(id)
             w,h = self.bmp.GetSize()
-            x, y = 0, 0
+            x, y = DARTS_HOME_POS[i]
             dc.DrawBitmap(self.bmp,x,y,True)
             dc.SetIdBounds(id,wx.Rect(x,y,w,h))
             self.objids.append(id)
@@ -123,8 +129,8 @@ class MyCanvas(wx.Panel):
         dc.SetPen(wx.Pen('black', 1))
         
         #Centre of dartboard
-        x = 500
-        y = 250
+        x = DART_CENTER_X
+        y = DART_CENTER_Y
         
         radii = [250, 190, 178, 120, 110, 18, 10]
         
@@ -153,7 +159,18 @@ class MyCanvas(wx.Panel):
         dc.DrawCircle(x, y, radii[5])
         dc.SetBrush(wx.Brush(DARTBOARD_RED))
         dc.DrawCircle(x, y, radii[6])    
-        
+    
+    def MoveDart(self, dartNum, p):
+        dartID = self.objids[dartNum]
+        r = self.pdc.GetIdBounds(dartID)
+        dx = p[0] - r[0]
+        dy = p[1] - r[1]        
+        self.pdc.TranslateId(dartID, dx, dy)
+        r2 = self.pdc.GetIdBounds(dartID)
+        r = r.Union(r2)
+        r.Inflate(4,4)
+        self.RefreshRect(r, False)
+    
 class ListenerThread(threading.Thread):
     def __init__(self, parent_window):
         """init listener thread class"""
@@ -164,10 +181,21 @@ class ListenerThread(threading.Thread):
         
     def run(self):
         """Start Listener Thread."""
+        player = 1
+        dartnum = 1
         while 1:
             #REPLACE WITH DART LISTENER LOGIC
             time.sleep(1)
-            dart = [190*random.random(), 2*pi*random.random()]
+            dart = [player, dartnum, 190*random.random(), 2*pi*random.random()]
+            dartnum = dartnum + 1
+            
+            if dartnum == 4:
+                dartnum = 1
+                if player == 1:
+                    player = 2
+                else:
+                    player = 1
+            
             print 'sent'
             print dart
             if self.DoClose:
@@ -179,36 +207,6 @@ class ListenerThread(threading.Thread):
         """Close Listener Thread."""
         self.DoClose = 1
         print 'Listener Terminated'
-        
-class MainGameFrame(wx.Frame): 
-    """Main Frame"""
-    def __init__(self, parent=None, id=-1, title=None): 
-        wx.Frame.__init__(self, parent, id, title) 
-        self.SetBackgroundColour('#D18B3D')
-        
-        #Create panel for painting on
-        #self.panel = wx.Panel(self, size=(1000, 500)) 
-        #self.panel.Bind(wx.EVT_PAINT, self.OnPaint) 
-        #self.status = wx.StaticText(self, -1, '', pos=(0,100))
-        self.SetTransparent(150)
-
-
-    def OnPaint(self, event):
-        # establish the painting surface
-        dc = wx.PaintDC(self.panel)
-        
-        self.DoDrawDartBoard(dc)
-        
-        rect = wx.Rect(0, 0, 250,500)
-        rect.SetPosition((0, 0))
-        dc.GradientFillLinear(rect, '#2A6E31', '#389442', wx.NORTH)
-        dc.DrawText("Player 1", 30, 40)
-        rect.SetPosition((750, 0))
-        dc.GradientFillLinear(rect, '#2A6E31', '#389442', wx.NORTH)
-        dc.DrawText("Player 2", 780, 40)
-        rect.SetPosition((20, 80))
-        
-   
         
 #AppGUI is instance of application.  This initializes all the widgets
 class AppGUI(wx.App):
@@ -256,8 +254,7 @@ class AppGUI(wx.App):
         self.SetTopWindow(frame)
         self.frame = frame 
         return True
-        
-            
+               
     def StartGame (self, event):
         """Start second thread for listening to events"""
         if not self.listener: #only have one listener
@@ -275,25 +272,32 @@ class AppGUI(wx.App):
     def OnClose (self, event):
         if self.listener:
             self.listener.close() #close the listener thread
+            print 'Close'
         self.frame.Close()
         
     def OnListen(self, event):
         """Listened"""
         if event.data is None:
             # Thread aborted (using our convention of None return)
-            #self.status.SetLabel('Listening aborted')
             print 'aborted'
             self.listener = None
         else:
             # Need to add dart drawing logic
-            # self.status.SetLabel('Heard: %s' % event.data)
             print 'received'
-            print event.data
+            dart = event.data
+            dartNum = dart[1] - 1 if dart[0] == 1 else dart[1] + 2
+            x = DART_CENTER_X + dart[2]*cos(dart[3])
+            y = DART_CENTER_Y + dart[2]*sin(dart[3])
+            
+            if dart[1] == 1: #Reset dart positions after every turn
+                for i in range(0,6):
+                    self.panel.MoveDart(i, DARTS_HOME_POS[i])
+                    
+            self.panel.MoveDart(dartNum, (x, y))
         
 class GUIThread(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-        self.start() #Self starting thread
     
     def run(self):
         self.App = AppGUI()
