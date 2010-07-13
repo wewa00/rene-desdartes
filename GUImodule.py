@@ -36,8 +36,8 @@ class MyCanvas(wx.Panel):
         wx.Panel.__init__(self, parent, id)
 
         self.SetBackgroundColour('#D18B3D')
-        bmp = images.Test2.GetBitmap()
-        mask = wx.Mask(bmp, wx.BLUE) #make transparent bg
+        bmp = images.DartImage1.GetBitmap()
+        mask = wx.Mask(bmp, '#010000') #make transparent bg
         bmp.SetMask(mask)
         self.bmp = bmp
         
