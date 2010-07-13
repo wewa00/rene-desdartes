@@ -25,3 +25,4 @@ if __name__ == '__main__':
     #app.MainLoop()
     
     g = GUIThread()
+    g.start()
