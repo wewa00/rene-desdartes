@@ -14,17 +14,14 @@ def updateUIfunction():
         #print dart
         updateUI.set()
 
-class AppGUI(wx.App):
-    def OnInit(self):
-        self.frame = GUIThread() 
-        return True
-
 if __name__ == '__main__':
     updateUI = threading.Event()
     correctScore = threading.Event()
     
-    updateUIstub = threading.Thread(target=updateUIfunction)
-    updateUIstub.start()
+    #updateUIstub = threading.Thread(target=updateUIfunction)
+    #updateUIstub.start()
     
-    app = AppGUI(0)
-    app.MainLoop()
+    #app = AppGUI()
+    #app.MainLoop()
+    
+    g = GUIThread()
