@@ -6,6 +6,8 @@ from threading import Thread
 from threading import Event
 #import time
 #import math
+import dartRegion
+import calibration
 
 # some definitions
 window_name = "Get Dart Location"
@@ -42,7 +44,7 @@ def GetDartWindowThread(im):
 
     global x_coordinate
     global y_coordinate
-    cv.Circle(im,(x_coordinate,y_coordinate),5,cv.CV_RGB(255, 0, 0),5)
+    cv.Circle(im,(x_coordinate,y_coordinate),3,cv.CV_RGB(255, 0, 0),2)
     cv.ShowImage(window_name, im)
     cv.WaitKey(0)
 
@@ -84,6 +86,23 @@ def GetDart():
     return (x_coordinate,y_coordinate)
 
 if __name__ == '__main__':
-    print "Click on a location to simulate a dart throw!"
-    print GetDart()
+    #calibrate first
+    calibration.Calibration()
 
+    print "Click on a location to simulate a dart throw!"
+
+    raw_dart_location = []
+    raw_dart_location = GetDart()
+    
+    print raw_dart_location
+
+    correct_dart_location = dartRegion.DartRegion(raw_dart_location)
+
+    print correct_dart_location
+
+    new_image = cv.CloneImage(calibration.image)
+    cv.WarpPerspective(calibration.image, new_image, calibration.mapping)
+    cv.Circle(new_image, correct_dart_location, 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage("new dart location",new_image)
+    
+    cv.WaitKey(0)
