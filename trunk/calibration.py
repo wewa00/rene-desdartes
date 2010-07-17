@@ -42,7 +42,7 @@ def Calibration():
     #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
     #image = cv.RetrieveFrame(capture)
     global image
-    image = cv.LoadImage(str(r"Dartboard Left.jpg"),cv.CV_LOAD_IMAGE_COLOR)
+    image = cv.LoadImage(str(r"dartboard_cam1.bmp"),cv.CV_LOAD_IMAGE_COLOR)
     new_image = cv.CloneImage(image)
 
     global points
@@ -53,28 +53,36 @@ def Calibration():
     global key
     e = Event()
     key = Event()
-    t = Thread(target=CalibrationWindowThread,args=(image,));
+    t = Thread(target=CalibrationWindowThread,args=(new_image,));
     t.start()
 
     print "Please select the center of the 20 points outermost rim."
     e.wait()
     e.clear()
 
+    cv.Circle(new_image, points[0], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
+
     print "Please select the center of the 3 points outermost rim."
     e.wait()
     e.clear()
+
+    cv.Circle(new_image, points[1], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
 
     print "Please select the center of the 11 points outermost rim."
     e.wait()
     e.clear()
 
+    cv.Circle(new_image, points[2], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
+
     print "Please select the center of the 6 points outermost rim."
     e.wait()
     e.clear()
 
-    #wait for event from mouse click
-    for k in range(0, len(points)):
-        print points[k]
+    cv.Circle(new_image, points[3], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
 
     #calculate the desired circle dimensions
     newtop = (round(new_image.height/2), round(new_image.height * 0.20))
@@ -85,6 +93,9 @@ def Calibration():
 
     global mapping
     mapping = cv.CreateMat(3, 3, cv.CV_32FC1)
+
+    #get a fresh new image
+    new_image = cv.CloneImage(image)
 
     cv.GetPerspectiveTransform([points[0],points[1],points[2],points[3]],[newtop, newbottom, newleft, newright],mapping)
     cv.WarpPerspective(image,new_image,mapping)
@@ -99,6 +110,10 @@ def Calibration():
     e.wait()
     e.clear()
     center_dartboard = points[4]
+    center_dartboard = (int(round(center_dartboard[0])), int(round(center_dartboard[1])))
+
+    cv.Circle(new_image, center_dartboard, 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
 
     init_point_arr = []
     print "Please select the outermost intersection of the 20 points and 1 ponit line."
@@ -106,7 +121,8 @@ def Calibration():
     e.clear()
     init_point_arr = points[5]
 
-
+    cv.Circle(new_image, init_point_arr, 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
 
     #find initial angle of the 20-1 divider
     tempX_mat = cv.CreateMat(1, 1, cv.CV_32FC1)
@@ -127,7 +143,7 @@ def Calibration():
     #print init_angle_val
 
     #display dividers
-    current_point = (int(init_point_arr[0]), int(init_point_arr[1]))
+    current_point = (int(round(init_point_arr[0])), int(round(init_point_arr[1])))
     next_angle = cv.CreateMat(1, 1, cv.CV_32FC1)
     cv.mSet( next_angle, 0, 0, 360 - init_angle_val )
     temp_angle = 360.0 - init_angle_val
@@ -148,7 +164,7 @@ def Calibration():
 
         #current_point = []
         #adjust the cartesian points
-        current_point = ( round( cv.mGet( tempX_mat, 0, 0) + center_dartboard[0] ), round( cv.mGet( tempY_mat, 0, 0) + (new_image.height - center_dartboard[1]) ) )
+        current_point = ( int(round( cv.mGet( tempX_mat, 0, 0) + center_dartboard[0] )), int(round( cv.mGet( tempY_mat, 0, 0) + (new_image.height - center_dartboard[1]) ) ))
         #print current_point
         
     cv.ShowImage(window_name,new_image)
@@ -160,30 +176,48 @@ def Calibration():
     e.clear()
     ring_arr.append(points[6])
 
+    cv.Circle(new_image, points[6], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
+
     print "Please select the second ring (any point). i.e. the ring that encloses the bull's eye."
     e.wait()
     e.clear()
     ring_arr.append(points[7])
+
+    cv.Circle(new_image, points[7], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
 
     print "Please select the third ring (any point). i.e. the closer ring that encloses the triple score region."
     e.wait()
     e.clear()
     ring_arr.append(points[8])
 
+    cv.Circle(new_image, points[8], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
+
     print "Please select the fourth ring (any point). i.e. the further ring that encloses the triple score region."
     e.wait()
     e.clear()
     ring_arr.append(points[9])
+
+    cv.Circle(new_image, points[9], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
 
     print "Please select the fifth ring (any point). i.e. the closer ring that encloses the double score region."
     e.wait()
     e.clear()
     ring_arr.append(points[10])
 
+    cv.Circle(new_image, points[10], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
+
     print "Please select the sixth ring (any point). i.e. the further ring that encloses the double score region."
     e.wait()
     e.clear()
     ring_arr.append(points[11])
+
+    cv.Circle(new_image, points[11], 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage(window_name, new_image)
 
     ring_radius_arr = []
     for i in range(0,6):
