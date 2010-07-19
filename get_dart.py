@@ -8,6 +8,7 @@ from threading import Event
 #import math
 import dartRegion
 import calibration
+import GameEngine
 
 # some definitions
 window_name = "Get Dart Location"
@@ -56,7 +57,8 @@ def GetDart():
     #image = cv.RetrieveFrame(capture)
     #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
     #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 720)
-    image = cv.LoadImage(str(r"Dartboard Left.jpg"),cv.CV_LOAD_IMAGE_COLOR)
+    #image = cv.LoadImage(str(r"Dartboard Left.jpg"),cv.CV_LOAD_IMAGE_COLOR)
+    image = calibration.image
 
     # the coordinates
     global x_coordinate
@@ -96,7 +98,7 @@ if __name__ == '__main__':
     
     print raw_dart_location
 
-    correct_dart_location = dartRegion.DartRegion(raw_dart_location)
+    correct_dart_location = dartRegion.DartLocation(raw_dart_location)
 
     print correct_dart_location
 
@@ -104,5 +106,17 @@ if __name__ == '__main__':
     cv.WarpPerspective(calibration.image, new_image, calibration.mapping)
     cv.Circle(new_image, correct_dart_location, 3,cv.CV_RGB(255, 0, 0),2, 8)
     cv.ShowImage("new dart location",new_image)
+
+    dartThrowInfo = GameEngine.dartThrow()
+    dartThrowInfo = dartRegion.DartRegion(correct_dart_location)
+
+    print "The dart's score:"
+    print dartThrowInfo.score
+    print "The dart's multiplier:"
+    print dartThrowInfo.multiplier
+    print "The dart's magnitude:"
+    print dartThrowInfo.magnitude
+    print "The dart's angle:"
+    print dartThrowInfo.angle
     
     cv.WaitKey(0)

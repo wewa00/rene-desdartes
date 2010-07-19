@@ -137,9 +137,11 @@ def Calibration():
     #each point region is 360/12 = 18 degrees large
     cv.CartToPolar(tempX_mat, tempY_mat, init_mag_mat, init_angle_reversed_mat, angleInDegrees=True)
 
+    global init_angle_val
     init_angle_val = 360.0 - cv.mGet(init_angle_reversed_mat, 0, 0)
 
     #print cv.mGet(init_mag_mat, 0, 0)
+    #print "Initial angle"
     #print init_angle_val
 
     #display dividers
@@ -152,7 +154,7 @@ def Calibration():
         cv.Line(new_image, center_dartboard, current_point, cv.CV_RGB(0, 0, 255), 1, 8)
         #calculate the cartesian coordinate of the next point divider
         temp_angle = 360.0 - temp_angle
-        temp_angle += + 18.0
+        temp_angle += 18.0
         if temp_angle >= 360.0:
             temp_angle -= 360.0
         #make temp_angle reversed
@@ -169,7 +171,7 @@ def Calibration():
         
     cv.ShowImage(window_name,new_image)
     
-
+    global ring_arr
     ring_arr = []
     print "Please select the first ring (any point). i.e. the ring that encloses the double bull's eye."
     e.wait()

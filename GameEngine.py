@@ -10,7 +10,7 @@ import ScoreKeeper
 # just a sample class so I can "create" dartThrows with the get throw function
 class dartThrow:
     def __init__(self):
-        self.base = -1
+        self.score = -1
         self.multiplier = -1
         self.magnitude = -1
         self.angle = -1
