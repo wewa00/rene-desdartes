@@ -9,7 +9,8 @@ import math
 
 # some definitions
 window_name = "Capture from Cam!"
-from_camera = True
+from_video = True
+from_camera = False
 
 def on_mouse(event, x, y, flags, param):
     if event==cv.CV_EVENT_LBUTTONDOWN:
@@ -37,8 +38,11 @@ def CalibrationWindowThread(im):
 def Calibration():
     global image
     
-    if from_camera: 
-        capture = cv.CaptureFromCAM(0)
+    if from_video:
+        if from_camera:
+            capture = cv.CaptureFromCAM(0)
+        else:
+            capture = cv.CaptureFromFile('darts.wmv')
         image = 0
         cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
         cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
