@@ -70,30 +70,35 @@ if __name__ == '__main__':
     print "Click on a location to simulate a dart throw!"
 
     raw_dart_location = []
-    raw_dart_location = GetDart()
-    
-    print raw_dart_location
 
-    correct_dart_location = dartRegion.DartLocation(raw_dart_location)
+    while True:
+        raw_dart_location = GetDart()
+        
+        print raw_dart_location
 
-    print correct_dart_location
+        correct_dart_location = dartRegion.DartLocation(raw_dart_location)
 
-    new_image = cv.CloneImage(calibration.image)
-    
-    cv.WarpPerspective(calibration.image, new_image, calibration.mapping)
-    cv.Circle(new_image, correct_dart_location, 3,cv.CV_RGB(255, 0, 0),2, 8)
-    cv.ShowImage("new dart location",new_image)
+        print correct_dart_location
 
-    dartThrowInfo = GameEngine.dartThrow()
-    dartThrowInfo = dartRegion.DartRegion(correct_dart_location)
+        new_image = cv.CloneImage(calibration.image)
+        
+        cv.WarpPerspective(calibration.image, new_image, calibration.mapping)
+        cv.Circle(new_image, correct_dart_location, 3,cv.CV_RGB(255, 0, 0),2, 8)
+        cv.ShowImage("new dart location",new_image)
 
-    print "The dart's score:"
-    print dartThrowInfo.score
-    print "The dart's multiplier:"
-    print dartThrowInfo.multiplier
-    print "The dart's magnitude:"
-    print dartThrowInfo.magnitude
-    print "The dart's angle:"
-    print dartThrowInfo.angle
-    
-    cv.WaitKey(0)
+        dartThrowInfo = GameEngine.dartThrow()
+        dartThrowInfo = dartRegion.DartRegion(correct_dart_location)
+
+        print "The dart's score:"
+        print dartThrowInfo.score
+        print "The dart's multiplier:"
+        print dartThrowInfo.multiplier
+        print "The dart's magnitude:"
+        print dartThrowInfo.magnitude
+        print "The dart's angle:"
+        print dartThrowInfo.angle
+
+        # press ESC to quit
+        if cv.WaitKey(0) == 27:
+            break;
+        cv.DestroyWindow("new dart location");
