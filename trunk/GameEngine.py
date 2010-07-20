@@ -7,17 +7,20 @@ import pickle
 import os.path
 import ScoreKeeper
 import GUImodule
+import time
+import random
+from math import pi
 
 # just a sample class so I can "create" dartThrows with the get throw function
 class dartThrow:
     def __init__(self):
-        self.score = -1
+        self.base = -1
         self.multiplier = -1
         self.magnitude = -1
         self.angle = -1
 
     def printThrow(self):
-        print "Score:" + self.score*self.multiplier + ", Magnitude: " + self.magnitude + ", Angle: " + self.angle
+        print "Score:" + `self.base*self.multiplier` + ", Magnitude: " + `self.magnitude` + ", Angle: " + `self.angle`
 
 #sample settings class
 class settings:
@@ -28,10 +31,10 @@ class settings:
     
 def getThrow():
     throw = dartThrow()
-    throw.base = input("Enter Base Region: ")
-    throw.multiplier = input("Enter Multiplier: ")
-    throw.magnitude = input("Enter Magnitude: ")
-    throw.angle = input("Enter Angle: ")
+    throw.base = 4 #input("Enter Base Region: ")
+    throw.multiplier = 1 #input("Enter Multiplier: ")
+    throw.magnitude = 380*random.random() #input("Enter Magnitude: ")
+    throw.angle = 2*pi*random.random() #input("Enter Angle: ")
     
     # my hack of triggering an event =P
     if throw.base == 25:
@@ -66,17 +69,17 @@ class DartGame:
         scoreKeeper.currentDartSet = [None, None, None]
         # switch the current player
         if self.currentPlayer == self.playerOne:
-            print "SWITCHED TO PLAYER TWO"
+            #print "SWITCHED TO PLAYER TWO"
             self.currentPlayer = self.playerTwo
             scoreKeeper.currentPlayer = self.playerTwo
         elif self.currentPlayer == self.playerTwo:
-            print "SWITCHED TO PLAYER ONE"
+            #print "SWITCHED TO PLAYER ONE"
             self.currentPlayer = self.playerOne
             scoreKeeper.currentPlayer = self.playerOne
         self.dartsLeft = 3
             
     def updateScoreGame(self, throwResult):
-        print "Updating Score"
+        #print "Updating Score"
         # this will be sent to/handled by the score keeper in the future
         # you can update score based on current player because players are linked to scoreKeeper
         self.currentPlayer.score = self.currentPlayer.score - (throwResult.base * throwResult.multiplier)
@@ -86,6 +89,8 @@ class DartGame:
         
         while updateUI.isSet():
             pass
+        
+        time.sleep(1)
         
         # if score is 0, the current player wins
         if self.currentPlayer.score == 0 and throwResult.multiplier == 2:
@@ -106,8 +111,8 @@ class DartGame:
             self.switchPlayer()
         
         # this is just for debugging, this will obviously be in UI
-        print self.currentPlayer.name + " has " + str(self.currentPlayer.score) + " remaining"
-        print str(self.dartsLeft) + " darts left to throw"
+        #print self.currentPlayer.name + " has " + str(self.currentPlayer.score) + " remaining"
+        #print str(self.dartsLeft) + " darts left to throw"
         
         # Set the UPDATE UI event
         updateUI.set()
@@ -116,7 +121,7 @@ class DartGame:
             pass
             
     def updateScorePractice(self, throwResult):
-        print "Updating practice"
+        #print "Updating practice"
         
         # read from a file... checking if it exists
         filePath = os.getcwd()
