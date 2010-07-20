@@ -68,9 +68,11 @@ class DartGame:
         if self.currentPlayer == self.playerOne:
             print "SWITCHED TO PLAYER TWO"
             self.currentPlayer = self.playerTwo
+            scoreKeeper.currentPlayer = self.playerTwo
         elif self.currentPlayer == self.playerTwo:
             print "SWITCHED TO PLAYER ONE"
             self.currentPlayer = self.playerOne
+            scoreKeeper.currentPlayer = self.playerOne
         self.dartsLeft = 3
             
     def updateScoreGame(self, throwResult):

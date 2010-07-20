@@ -16,7 +16,8 @@ class ScoreKeeper(object):
         self.playerTwo = game.playerTwo
         self.playerOne.throwHistory = [] 
         self.playerTwo.throwHistory = []
-        self.currentDartSet = [None, None, None] 
+        self.currentDartSet = [None, None, None]
+        self.currentPlayer = game.currentPlayer
         if game.gameType == 1:
             self.playerOne.score = 501
             self.playerTwo.score = 501
