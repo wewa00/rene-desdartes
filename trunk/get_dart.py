@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 import cv
-from threading import Thread
+#from threading import Thread
 from threading import Event
 
 import dartRegion
@@ -10,7 +10,8 @@ import GameEngine
 # some definitions
 window_name = "Get Dart Location"
 debug = True
-from_camera = True
+from_video = True
+from_camera = False
 
 def on_mouse(event, x, y, flags, param):
     if event==cv.CV_EVENT_LBUTTONDOWN:
@@ -23,8 +24,11 @@ def on_mouse(event, x, y, flags, param):
 
 def GetDart():
     if debug:
-        if from_camera:
-            capture = cv.CaptureFromCAM(0)
+        if from_video:
+            if from_camera:
+                capture = cv.CaptureFromCAM(0)
+            else:
+                capture = cv.CaptureFromFile('darts.wmv')
             cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
             cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
             image = 0
@@ -49,7 +53,7 @@ def GetDart():
         cv.SetMouseCallback(window_name, on_mouse)
         
         while not mouse_click_down.is_set():
-            if from_camera:
+            if from_video:
                 cv.GrabFrame(capture)
                 image = cv.RetrieveFrame(capture)
             cv.ShowImage(window_name, image)
