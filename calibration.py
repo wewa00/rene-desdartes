@@ -137,8 +137,10 @@ def Calibration():
     #each point region is 360/12 = 18 degrees large
     cv.CartToPolar(tempX_mat, tempY_mat, init_mag_mat, init_angle_reversed_mat, angleInDegrees=True)
 
-    global init_angle_val
-    init_angle_val = 360.0 - cv.mGet(init_angle_reversed_mat, 0, 0)
+    global ref_angle
+    ref_angle = 360.0 - cv.mGet(init_angle_reversed_mat, 0, 0)
+    global ref_mag
+    ref_mag = cv.mGet(init_mag_mat, 0, 0)
 
     #print cv.mGet(init_mag_mat, 0, 0)
     #print "Initial angle"
@@ -147,8 +149,8 @@ def Calibration():
     #display dividers
     current_point = (int(round(init_point_arr[0])), int(round(init_point_arr[1])))
     next_angle = cv.CreateMat(1, 1, cv.CV_32FC1)
-    cv.mSet( next_angle, 0, 0, 360 - init_angle_val )
-    temp_angle = 360.0 - init_angle_val
+    cv.mSet( next_angle, 0, 0, 360 - ref_angle )
+    temp_angle = 360.0 - ref_angle
     #draw point dividers counterclockwise, just like how angle is calculated, arctan(y/x)
     for i in range(0, 20):
         cv.Line(new_image, center_dartboard, current_point, cv.CV_RGB(0, 0, 255), 1, 8)
@@ -171,7 +173,6 @@ def Calibration():
         
     cv.ShowImage(window_name,new_image)
     
-    global ring_arr
     ring_arr = []
     print "Please select the first ring (any point). i.e. the ring that encloses the double bull's eye."
     e.wait()
@@ -221,12 +222,13 @@ def Calibration():
     cv.Circle(new_image, points[11], 3,cv.CV_RGB(255, 0, 0),2, 8)
     cv.ShowImage(window_name, new_image)
 
-    ring_radius_arr = []
+    global ring_radius
+    ring_radius = []
     for i in range(0,6):
         #find the radius of the ring
-        ring_radius_arr.append(int(math.sqrt(( ring_arr[i][0] - center_dartboard[0] )** 2 + (ring_arr[i][1] - center_dartboard[1] )** 2)))
+        ring_radius.append(int(math.sqrt(( ring_arr[i][0] - center_dartboard[0] )** 2 + (ring_arr[i][1] - center_dartboard[1] )** 2)))
         #display the rings
-        cv.Circle(new_image, center_dartboard, ring_radius_arr[i], cv.CV_RGB(0, 255, 0), 1, 8)
+        cv.Circle(new_image, center_dartboard, ring_radius[i], cv.CV_RGB(0, 255, 0), 1, 8)
         
     cv.ShowImage(window_name,new_image)
     

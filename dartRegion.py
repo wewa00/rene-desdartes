@@ -3,6 +3,7 @@ import sys
 import cv
 import calibration
 import GameEngine
+from random import randint, random
 
 def DartLocation(raw_dart_loc):
     try:
@@ -72,10 +73,10 @@ def DartRegion(dart_loc):
 
             #Calculating score:
             #Find base point
-            if dart_angle_val < calibration.init_angle_val:         #make sure dart's angle is always greater
+            if dart_angle_val < calibration.ref_angle:         #make sure dart's angle is always greater
                 dart_angle_val += 360.0
                 
-            angleDiffMul = int((dart_angle_val - calibration.init_angle_val) / 18.0)
+            angleDiffMul = int((dart_angle_val - calibration.ref_angle) / 18.0)
 
             #starting from the 20 points
             if angleDiffMul == 0:
@@ -123,23 +124,10 @@ def DartRegion(dart_loc):
                 dartInfo.score = -300
 
             #Calculating multiplier (and special cases for Bull's Eye):
-
-            tempX_mat = cv.CreateMat(1, len(calibration.ring_arr), cv.CV_32FC1)
-            tempY_mat = cv.CreateMat(1, len(calibration.ring_arr), cv.CV_32FC1)
-            for i in range(0, len(calibration.ring_arr)):
-                #the magnitude is in reference to the center
-                cv.mSet( tempX_mat, 0, i, calibration.ring_arr[i][0] - calibration.center_dartboard[0])
-                cv.mSet( tempY_mat, 0, i, calibration.ring_arr[i][1] - calibration.center_dartboard[1])
-
-            ring_mag = cv.CreateMat(1, len(calibration.ring_arr), cv.CV_32FC1)
-            ring_angle = cv.CreateMat(1, len(calibration.ring_arr), cv.CV_32FC1)        #not needed
-
-            cv.CartToPolar(tempX_mat, tempY_mat, ring_mag, ring_angle, angleInDegrees=True)
-
-            for i in range(0, len(calibration.ring_arr)):
-                print cv.mGet( ring_mag, 0, i )
+            for i in range(0, len(calibration.ring_radius)):
+                print calibration.ring_radius[i]
                 #Find the ring that encloses the dart
-                if dartInfo.magnitude <= cv.mGet( ring_mag, 0, i ):
+                if dartInfo.magnitude <= calibration.ring_radius[i]:
                     #Bull's eye, adjust base score
                     if i == 0:
                         dartInfo.score = 25
@@ -160,7 +148,7 @@ def DartRegion(dart_loc):
                     break
 
             #miss
-            if dartInfo.magnitude > cv.mGet( ring_mag, 0, 5 ):
+            if dartInfo.magnitude > calibration.ring_radius[5]:
                 dartInfo.score = 0
                 dartInfo.multiplier = 0
 
@@ -178,7 +166,92 @@ def DartRegion(dart_loc):
         print err2
         dartInfo = GameEngine.dartThrow()
         return dartInfo
-    
+
+
+#Given a score region, this function returns the ideal location to aim
+def RegionToLocation(score, multiplier):
+    try:
+        if calibration.calibrationComplete:
+            dart_mag = 0
+            dart_angle = 0
+            angle_increment = 18.0
+            # this is the angle of the middle of the 20 point region
+            ref_dart_angle = (calibration.ref_angle + (calibration.ref_angle + angle_increment)) / 2
+
+            if score == 20:
+                dart_angle = ref_dart_angle + 0*angle_increment
+            elif score == 5:
+                dart_angle = ref_dart_angle + 1*angle_increment
+            elif score == 12:
+                dart_angle = ref_dart_angle + 2*angle_increment
+            elif score == 9:
+                dart_angle = ref_dart_angle + 3*angle_increment
+            elif score == 14:
+                dart_angle = ref_dart_angle + 4*angle_increment
+            elif score == 11:
+                dart_angle = ref_dart_angle + 5*angle_increment
+            elif score == 8:
+                dart_angle = ref_dart_angle + 6*angle_increment
+            elif score == 16:
+                dart_angle = ref_dart_angle + 7*angle_increment
+            elif score == 7:
+                dart_angle = ref_dart_angle + 8*angle_increment
+            elif score == 19:
+                dart_angle = ref_dart_angle + 9*angle_increment
+            elif score == 3:
+                dart_angle = ref_dart_angle + 10*angle_increment
+            elif score == 17:
+                dart_angle = ref_dart_angle + 11*angle_increment
+            elif score == 2:
+                dart_angle = ref_dart_angle + 12*angle_increment
+            elif score == 15:
+                dart_angle = ref_dart_angle + 13*angle_increment
+            elif score == 10:
+                dart_angle = ref_dart_angle + 14*angle_increment
+            elif score == 6:
+                dart_angle = ref_dart_angle + 15*angle_increment
+            elif score == 13:
+                dart_angle = ref_dart_angle + 16*angle_increment
+            elif score == 4:
+                dart_angle = ref_dart_angle + 17*angle_increment
+            elif score == 18:
+                dart_angle = ref_dart_angle + 18*angle_increment
+            elif score == 1:
+                dart_angle = ref_dart_angle + 19*angle_increment
+            else:
+                dart_angle = -1
+
+            #miss
+            if multiplier == 1:
+                #always aim at the bigger region
+                dart_mag = calibration.ring_radius[3] + calibration.ring_radius[4]
+            elif multiplier == 2:
+                dart_mag = calibration.ring_radius[4] + calibration.ring_radius[5]
+            elif multiplier == 3:
+                dart_mag = calibration.ring_radius[2] + calibration.ring_radius[3]
+            else:
+                dart_mag = 0
+
+            #special cases: bull's eye and double bull's eye
+            if score == 25:
+                if multiplier == 1:
+                    dart_mag = calibration.ring_radius[0] + calibration.ring_radius[1]
+                    dart_angle = randint(0, 360)
+                elif multiplier == 2:
+                    dart_mag = 0
+                    dart_angle = 0
+
+            return (dart_mag, dart_angle)
+        
+
+    #system not calibrated
+    except AttributeError as err1:
+        print err1
+        return (-1, -1)
+
+    except NameError as err2:
+        print err2
+        return (-2, -2)
 
 if __name__ == '__main__':
     print "Welcome to darts!"
