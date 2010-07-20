@@ -31,6 +31,7 @@ class settings:
     
 def getThrow():
     throw = dartThrow()
+    s = raw_input('--> ')
     throw.base = 4 #input("Enter Base Region: ")
     throw.multiplier = 1 #input("Enter Multiplier: ")
     throw.magnitude = 380*random.random() #input("Enter Magnitude: ")
@@ -90,7 +91,7 @@ class DartGame:
         while updateUI.isSet():
             pass
         
-        time.sleep(1)
+        time.sleep(0.1)
         
         # if score is 0, the current player wins
         if self.currentPlayer.score == 0 and throwResult.multiplier == 2:
@@ -103,6 +104,11 @@ class DartGame:
             self.currentPlayer.score = self.currentPlayer.score + (throwResult.base * throwResult.multiplier)
             self.switchPlayer()
             print self.currentPlayer.name + " BUSTED. Too bad!"
+            updateUI.set()
+        
+            while updateUI.isSet():
+                pass
+            
             return
         
         # Remove a dart and check if you need to switch players
@@ -111,7 +117,7 @@ class DartGame:
             self.switchPlayer()
         
         # this is just for debugging, this will obviously be in UI
-        #print self.currentPlayer.name + " has " + str(self.currentPlayer.score) + " remaining"
+        print self.currentPlayer.name + " has " + str(self.currentPlayer.score) + " remaining"
         #print str(self.dartsLeft) + " darts left to throw"
         
         # Set the UPDATE UI event

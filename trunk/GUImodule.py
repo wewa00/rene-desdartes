@@ -51,6 +51,7 @@ class MyCanvas(wx.Panel):
         
         # dart ids
         self.objids = []
+        self.objmovable = []
         
         # create a PseudoDC to record our drawing
         self.pdc = wx.PseudoDC()
@@ -74,16 +75,17 @@ class MyCanvas(wx.Panel):
                 break
         elif event.Dragging() or event.LeftUp():
             if self.dragid != -1:
-                x,y = self.lastpos
-                dx = event.GetX() - x
-                dy = event.GetY() - y
-                r = self.pdc.GetIdBounds(self.dragid)       #get the previous location
-                self.pdc.TranslateId(self.dragid, dx, dy)   #find the new x,y
-                r2 = self.pdc.GetIdBounds(self.dragid)      #get the new location
-                r = r.Union(r2)                             #combine the two rectangles
-                r.Inflate(4,4)                              #inflate to compensate
-                self.RefreshRect(r, False)                  #repaint the rectangle
-                self.lastpos = (event.GetX(),event.GetY())
+                if self.objmovable[self.objids.index(self.dragid)]:
+                    x,y = self.lastpos
+                    dx = event.GetX() - x
+                    dy = event.GetY() - y
+                    r = self.pdc.GetIdBounds(self.dragid)       #get the previous location
+                    self.pdc.TranslateId(self.dragid, dx, dy)   #find the new x,y
+                    r2 = self.pdc.GetIdBounds(self.dragid)      #get the new location
+                    r = r.Union(r2)                             #combine the two rectangles
+                    r.Inflate(4,4)                              #inflate to compensate
+                    self.RefreshRect(r, False)                  #repaint the rectangle
+                    self.lastpos = (event.GetX(),event.GetY())
             if event.LeftUp():
                 self.dragid = -1
                 #correctScore.set()
@@ -128,6 +130,7 @@ class MyCanvas(wx.Panel):
             dc.DrawBitmap(self.bmp,x,y,True)
             dc.SetIdBounds(id,wx.Rect(x,y,w,h))
             self.objids.append(id)
+            self.objmovable.append(False)
         dc.EndDrawing()
         
     def DoDrawDartBoard(self, dc):
@@ -168,8 +171,9 @@ class MyCanvas(wx.Panel):
         dc.SetBrush(wx.Brush(DARTBOARD_RED))
         dc.DrawCircle(x, y, 19.0/17.0*radii[6])    
     
-    def MoveDart(self, dartNum, p):
+    def MoveDart(self, dartNum, p, movable):
         dartID = self.objids[dartNum]
+        self.objmovable[dartNum] = movable
         r = self.pdc.GetIdBounds(dartID)
         dx = p[0] - r[0]
         dy = p[1] - r[1]        
@@ -308,11 +312,11 @@ class AppGUI(wx.App):
             x = DART_CENTER_X + event.dart.magnitude/DARTBOARD_REFMAG*190*cos(event.dart.angle)
             y = DART_CENTER_Y - event.dart.magnitude/DARTBOARD_REFMAG*190*sin(event.dart.angle)
             
-            self.panel.MoveDart(dartNum, (x, y))
+            self.panel.MoveDart(dartNum, (x, y), True)
             
         elif event.action == "reset":
             for i in range(6):
-                self.panel.MoveDart(i, DARTS_HOME_POS[i])
+                self.panel.MoveDart(i, DARTS_HOME_POS[i], False)
         
         
 class GUIThread(threading.Thread):
