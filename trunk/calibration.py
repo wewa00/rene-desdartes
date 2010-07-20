@@ -9,6 +9,7 @@ import math
 
 # some definitions
 window_name = "Capture from Cam!"
+from_camera = True
 
 def on_mouse(event, x, y, flags, param):
     if event==cv.CV_EVENT_LBUTTONDOWN:
@@ -34,15 +35,18 @@ def CalibrationWindowThread(im):
             break
 
 def Calibration():
-    #capture = cv.CaptureFromCAM(0)
-    #image = 0
-
-    #cv.GrabFrame(capture)
-    #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
-    #cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
-    #image = cv.RetrieveFrame(capture)
     global image
-    image = cv.LoadImage(str(r"dartboard_cam1.bmp"),cv.CV_LOAD_IMAGE_COLOR)
+    
+    if from_camera: 
+        capture = cv.CaptureFromCAM(0)
+        image = 0
+        cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
+        cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
+        cv.GrabFrame(capture)
+        image = cv.CloneImage(cv.RetrieveFrame(capture))
+    else:
+        image = cv.LoadImage(str(r"dartboard_cam1.bmp"),cv.CV_LOAD_IMAGE_COLOR)
+        
     new_image = cv.CloneImage(image)
 
     global points
