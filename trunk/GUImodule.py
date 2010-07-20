@@ -1,6 +1,3 @@
-# draw lines, a rounded-rectangle and a circle on a wx.PaintDC() surface
-# tested with Python24 and wxPython26     vegaseat      06mar2007
-
 import wx
 import images
 import time
@@ -8,6 +5,7 @@ from math import sin, cos, pi
 import threading
 import thread
 import random
+import ScoreKeeper
 
 EVT_RESULT_ID = wx.NewId()
 EVT_STARTLISTENER_ID = wx.NewId()
@@ -82,6 +80,7 @@ class MyCanvas(wx.Panel):
                 self.lastpos = (event.GetX(),event.GetY())
             if event.LeftUp():
                 self.dragid = -1
+                correctScore.set()
 
     def OnPaint(self, event):
         # Create a buffered paint DC.  It will create the real
@@ -184,24 +183,34 @@ class ListenerThread(threading.Thread):
         player = 1
         dartnum = 1
         while 1:
+            if updateUI.isSet():
+                print "<...\n"
+                dart = scoreKeeper.currentDartSet[0]
+                
+                dartData = [dart.base, dart.multiplier, dart.magnitude, dart.angle]
+                print dartData
+                print "\n...>"
+                
+                updateUI.clear()
+        
             #REPLACE WITH DART LISTENER LOGIC
-            time.sleep(1)
-            dart = [player, dartnum, 190*random.random(), 2*pi*random.random()]
-            dartnum = dartnum + 1
+            #time.sleep(1)
+            #dart = [player, dartnum, 190*random.random(), 2*pi*random.random()]
+            #dartnum = dartnum + 1
             
-            if dartnum == 4:
-                dartnum = 1
-                if player == 1:
-                    player = 2
-                else:
-                    player = 1
-            
-            print 'sent'
-            print dart
-            if self.DoClose:
-                wx.PostEvent(self.parent_window, ResultEvent(None))
-                return
-            wx.PostEvent(self.parent_window, ResultEvent(dart))
+            #if dartnum == 4:
+            #    dartnum = 1
+            #    if player == 1:
+            #        player = 2
+            #    else:
+            #        player = 1
+            #
+            #print 'sent'
+            #print dart
+            #if self.DoClose:
+            #    wx.PostEvent(self.parent_window, ResultEvent(None))
+            #    return
+            #wx.PostEvent(self.parent_window, ResultEvent(dart))
         
     def close(self):
         """Close Listener Thread."""
@@ -298,9 +307,19 @@ class AppGUI(wx.App):
 class GUIThread(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
-    
+        
     def run(self):
         self.App = AppGUI()
         self.App.MainLoop()
+    
+    def initUIEvent(self, event):
+        global updateUI
+        updateUI = event
         
-        
+    def initCorrectScoreEvent(self, event):
+        global correctScore
+        correctScore = event
+    
+    def initScoreKeeper(self, object):
+        global scoreKeeper
+        scoreKeeper = object

@@ -6,6 +6,7 @@ import thread
 import pickle
 import os.path
 import ScoreKeeper
+import GUImodule
 
 # just a sample class so I can "create" dartThrows with the get throw function
 class dartThrow:
@@ -79,6 +80,11 @@ class DartGame:
         self.currentPlayer.score = self.currentPlayer.score - (throwResult.base * throwResult.multiplier)
         # add the dart to the current dart set in the score keeper
         scoreKeeper.currentDartSet[3-self.dartsLeft] = throwResult
+        updateUI.set()
+        
+        while updateUI.isSet():
+            pass
+        
         # if score is 0, the current player wins
         if self.currentPlayer.score == 0 and throwResult.multiplier == 2:
             self.winner = self.currentPlayer
@@ -103,6 +109,9 @@ class DartGame:
         
         # Set the UPDATE UI event
         updateUI.set()
+        
+        while updateUI.isSet():
+            pass
             
     def updateScorePractice(self, throwResult):
         print "Updating practice"
@@ -132,6 +141,10 @@ def playGame (settings):
     game = DartGame(settings)
     global scoreKeeper
     scoreKeeper = ScoreKeeper.ScoreKeeper(game)
+    
+    #passing the score keeper instance to the GUI
+    g.initScoreKeeper(scoreKeeper)
+    
     while ( game.stillPlaying == True ):
         throwResult = getThrow()
         # uncomment to get it to print out dart throw
@@ -152,8 +165,6 @@ def playGame (settings):
     
     print "THE WINNER IS " + game.currentPlayer.name
 
-
-
 def startEngine():
     print "START YOUR ENGINES!"
     setting = settings()
@@ -164,6 +175,13 @@ if __name__ == "__main__":
     print "Main is running"
     correctScore = threading.Event()
     updateUI = threading.Event()
+    
+    g = GUImodule.GUIThread()
+    g.initCorrectScoreEvent(correctScore)
+    g.initUIEvent(updateUI)
+    
+    g.start()
+    
     # start the engine in a thread!
     # buggy, it crashes at various points, don't know why
     # thread.start_new_thread(startEngine,())
