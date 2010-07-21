@@ -10,7 +10,7 @@ import math
 # some definitions
 window_name = "Capture from Cam!"
 from_video = True
-from_camera = False
+from_camera = True
 
 def on_mouse(event, x, y, flags, param):
     if event==cv.CV_EVENT_LBUTTONDOWN:
@@ -46,8 +46,17 @@ def Calibration():
         image = 0
         cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
         cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
-        cv.GrabFrame(capture)
-        image = cv.CloneImage(cv.RetrieveFrame(capture))
+
+##we wait for 40 frames...the picture at the very start is always kind of weird,
+##wait for the picture to stabalize
+        for n in range(40):
+##            RetrieveFrame is just GrabFrame and RetrieveFrame combined into 1
+##            function call
+            image = cv.QueryFrame(capture)
+##            cv.GrabFrame(capture)
+##            image = cv.CloneImage(cv.RetrieveFrame(capture))
+
+        image = cv.CloneImage(cv.QueryFrame(capture))        
     else:
         image = cv.LoadImage(str(r"dartboard_cam1.bmp"),cv.CV_LOAD_IMAGE_COLOR)
         

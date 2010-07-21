@@ -12,7 +12,7 @@ import GameEngine
 window_name = "Get Dart Location"
 debug = False
 from_video = True
-from_camera = False
+from_camera = True
 videofile = 'darts.wmv'
 cascadefile = 'default.xml'
 capture = 0
