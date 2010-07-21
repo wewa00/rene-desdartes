@@ -12,10 +12,11 @@ import GameEngine
 window_name = "Get Dart Location"
 debug = False
 from_video = True
-from_camera = True
+from_camera = False
 videofile = 'darts.wmv'
 cascadefile = 'default.xml'
 capture = 0
+init_get_dart_wait = 40
 
 CLOCKS_PER_SEC = 1.0
 MHI_DURATION = 0.1
@@ -105,7 +106,9 @@ def on_mouse(event, x, y, flags, param):
         y_coordinate = y
         mouse_click_down.set()
 
-def GetDart():
+def InitGetDart():
+    global image
+    
     if from_video:
         global capture
         if capture == 0:
@@ -116,13 +119,21 @@ def GetDart():
                 
             cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
             cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
+##if we're capturing live from camera, wait a few frames until the feed stabilizes
+            if from_camera:
+                for n in range(init_get_dart_wait):
+                    image = cv.QueryFrame(capture)
 ##        image = 0
 
 ##        cv.GrabFrame(capture)
 ##        image = cv.RetrieveFrame(capture)           
     else:            
         #image = cv.LoadImage(str(r"Dartboard Left.jpg"),cv.CV_LOAD_IMAGE_COLOR)
-        image = calibration.image
+        image = calibration.image    
+
+def GetDart():
+    global capture
+    global image
         
     if debug:
         # the coordinates
@@ -184,9 +195,9 @@ def GetDart():
         cv.NamedWindow('Original')
       
         while True:
-##            image = cv.QueryFrame(capture)
-            cv.GrabFrame(capture)
-            image = cv.RetrieveFrame(capture)
+            image = cv.QueryFrame(capture)
+##            cv.GrabFrame(capture)
+##            image = cv.RetrieveFrame(capture)
             image_clone = cv.CloneImage(image)
             if(image):
                 if(not motion):
@@ -265,9 +276,11 @@ if __name__ == '__main__':
     #calibrate first
     calibration.Calibration()
 
-    print "Click on a location to simulate a dart throw!"
+##    print "Click on a location to simulate a dart throw!"
 
     raw_dart_location = []
+##    need to call this function first before you can use GetDart()!!!
+    InitGetDart()
 
     while True:
         raw_dart_location = GetDart()
