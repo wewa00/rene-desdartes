@@ -12,9 +12,10 @@ import GameEngine
 window_name = "Get Dart Location"
 debug = False
 from_video = True
-from_camera = True
+from_camera = False
 videofile = 'darts.wmv'
 cascadefile = 'default.xml'
+capture = 0
 
 CLOCKS_PER_SEC = 1.0
 MHI_DURATION = 0.1
@@ -106,14 +107,16 @@ def on_mouse(event, x, y, flags, param):
 
 def GetDart():
     if from_video:
-        if from_camera:
-            capture = cv.CaptureFromCAM(0)
-        else:
-            capture = cv.CaptureFromFile(videofile)
-            
-        cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
-        cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
-        image = 0
+        global capture
+        if capture == 0:
+            if from_camera:
+                capture = cv.CaptureFromCAM(0)
+            else:
+                capture = cv.CaptureFromFile(videofile)
+                
+            cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
+            cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
+##        image = 0
 
 ##        cv.GrabFrame(capture)
 ##        image = cv.RetrieveFrame(capture)           
