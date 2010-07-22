@@ -9,6 +9,7 @@ import math
 
 # some definitions
 window_name = "Capture from Cam!"
+debug = True
 from_video = False
 from_camera = False
 

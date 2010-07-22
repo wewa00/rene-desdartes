@@ -11,9 +11,9 @@ import GameEngine
 
 # some definitions
 window_name = "Get Dart Location"
-debug = True
-from_video = False
-from_camera = False
+##debug = True
+##from_video = False
+##from_camera = False
 videofile = 'darts.wmv'
 cascadefile = 'default.xml'
 capture = 0
@@ -110,11 +110,12 @@ def on_mouse(event, x, y, flags, param):
 
 def InitGetDart():
     global image
+    global initialized
     
-    if from_video:
+    if calibration.from_video:
         global capture
         if capture == 0:
-            if from_camera:
+            if calibration.from_camera:
                 capture = cv.CaptureFromCAM(0)
             else:
                 capture = cv.CaptureFromFile(videofile)
@@ -122,7 +123,7 @@ def InitGetDart():
             cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
             cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
 ##if we're capturing live from camera, wait a few frames until the feed stabilizes
-            if from_camera:
+            if calibration.from_camera:
                 for n in range(init_get_dart_wait):
                     image = cv.QueryFrame(capture)
 ##        image = 0
@@ -131,13 +132,15 @@ def InitGetDart():
 ##        image = cv.RetrieveFrame(capture)           
     else:            
         #image = cv.LoadImage(str(r"Dartboard Left.jpg"),cv.CV_LOAD_IMAGE_COLOR)
-        image = calibration.image    
+        image = calibration.image
+        
+    initialized = True
 
 def GetRawDartXY():
     global capture
     global image
         
-    if debug:
+    if calibration.debug:
         # the coordinates
         global x_coordinate
         global y_coordinate
@@ -152,7 +155,7 @@ def GetRawDartXY():
         cv.SetMouseCallback(window_name, on_mouse)
         
         while not mouse_click_down.is_set():
-            if from_video:
+            if calibration.from_video:
                 cv.GrabFrame(capture)
                 image = cv.RetrieveFrame(capture)
             cv.ShowImage(window_name, image)
@@ -281,7 +284,6 @@ def GetDart():
     if not initialized:
         ##    need to call this function first before you can use GetDart()!!!
         InitGetDart()
-        initialized = True
         
     raw_dart_location = GetRawDartXY()
     correct_dart_location = dartRegion.DartLocation(raw_dart_location)

@@ -173,6 +173,9 @@ def playGame (settings):
 
     # don't know where's a good place to put this, but will put it here for now
     calibration.Calibration()
+
+    # this call loads the camera capture and waits a few frames for the picture to stabilize
+    get_dart.InitGetDart()
     
     while ( game.stillPlaying == True ):
 ##        Now uses get_dart.GetDart()
