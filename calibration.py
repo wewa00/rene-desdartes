@@ -9,7 +9,7 @@ import math
 
 # some definitions
 window_name = "Capture from Cam!"
-from_video = True
+from_video = False
 from_camera = False
 
 def on_mouse(event, x, y, flags, param):
@@ -56,7 +56,9 @@ def Calibration():
                 image = cv.QueryFrame(capture)
     ##            cv.GrabFrame(capture)
     ##            image = cv.CloneImage(cv.RetrieveFrame(capture))
-
+                
+            ## need to clone this image...otherwise once the capture gets released we won't have access
+            ## to the image anymore
             image = cv.CloneImage(cv.QueryFrame(capture))
         else:
 ##            if we're capturing from a video file, then just take the first frame
