@@ -11,7 +11,13 @@ import time
 import random
 import get_dart
 import calibration
+import AI
+import time
 from math import pi
+
+difficulty = 10
+player_switch_wait_time = 2
+ai_throw_wait_time = 1.7
 
 # just a sample class so I can "create" dartThrows with the get throw function
 class dartThrow:
@@ -27,8 +33,8 @@ class dartThrow:
 #sample settings class
 class settings:
     def __init__(self):
-        self.playerOne = "One"
-        self.playerTwo = "Two"
+        self.playerOne = "Player"
+        self.playerTwo = "CPU2"
         self.gameType = 1 #1 is normal, 2 is practice
 
 ##Use get_dart.GetDart() instead
@@ -81,6 +87,7 @@ class DartGame:
             self.currentPlayer = self.playerOne
             scoreKeeper.currentPlayer = self.playerOne
         self.dartsLeft = 3
+        time.sleep(player_switch_wait_time)
             
     def updateScoreGame(self, throwResult):
         #print "Updating Score"
@@ -103,7 +110,8 @@ class DartGame:
             return
         # if score is less than 0, it means the player busts, and their score resets, switches players
         # if the score is 0, it means the multiplier is NOT 2, they still bust
-        if self.currentPlayer.score <= 0:
+        # if the score is 1, it is still bust, there's no doubles to get a total of 1 point
+        if self.currentPlayer.score <= 1:
             self.currentPlayer.score = self.currentPlayer.score + (throwResult.base * throwResult.multiplier)
             # switch player AFTER we print out " BUSTED. Too bad!"
             print self.currentPlayer.name + " BUSTED. Too bad!"
@@ -159,7 +167,7 @@ def playGame (settings):
     game = DartGame(settings)
     global scoreKeeper
     scoreKeeper = ScoreKeeper.ScoreKeeper(game)
-    
+    AIPlayer = AI.AIOpponent(difficulty)
     #passing the score keeper instance to the GUI
     g.initScoreKeeper(scoreKeeper)
 
@@ -168,7 +176,10 @@ def playGame (settings):
     
     while ( game.stillPlaying == True ):
 ##        Now uses get_dart.GetDart()
-        throwResult = get_dart.GetDart()#getThrow()
+        if game.currentPlayer.name == "CPU1" or game.currentPlayer.name == "CPU2":
+            throwResult = AIPlayer.generateThrow(game.currentPlayer.score, game.dartsLeft)
+        else:
+            throwResult = get_dart.GetDart()#getThrow()
 
         # uncomment to get it to print out dart throw
         throwResult.printThrow()
@@ -182,6 +193,8 @@ def playGame (settings):
             if game.gameType == 1:
                 #print "====Normal mode===="
                 game.updateScoreGame(throwResult)
+                if game.currentPlayer.name == "CPU1" or game.currentPlayer.name == "CPU2":
+                    time.sleep(ai_throw_wait_time)
             else:
                 #print "====Practice mode===="
                 game.updateScorePractice(throwResult)
@@ -202,7 +215,7 @@ if __name__ == "__main__":
     g = GUImodule.GUIThread()
     g.initCorrectScoreEvent(correctScore)
     g.initUIEvent(updateUI)
-    
+
     g.start()
     
     # start the engine in a thread!
