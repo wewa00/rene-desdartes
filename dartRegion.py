@@ -49,6 +49,8 @@ def DartLocation(raw_dart_loc):
         print err2
         return (-2, -2)
 
+
+#Returns dartThrow (score, multiplier, angle, magnitude) based on x,y location
 def DartRegion(dart_loc):
     try:
         if calibration.calibrationComplete:
@@ -167,6 +169,103 @@ def DartRegion(dart_loc):
         print err2
         dartInfo = GameEngine.dartThrow()
         return dartInfo
+
+
+#Finds score and multiplier based on angle and magnitude
+def LocationToRegion(angle, magnitude):
+    try:
+        if calibration.calibrationComplete:
+            print "Finding dart throw information"
+
+            dartInfo = GameEngine.dartThrow()
+
+            angleDiffMul = int((angle - calibration.ref_angle) / 18.0)
+
+            #starting from the 20 points
+            if angleDiffMul == 0:
+                dartInfo.base = 20
+            elif angleDiffMul == 1:
+                dartInfo.base = 5
+            elif angleDiffMul == 2:
+                dartInfo.base = 12
+            elif angleDiffMul == 3:
+                dartInfo.base = 9
+            elif angleDiffMul == 4:
+                dartInfo.base = 14
+            elif angleDiffMul == 5:
+                dartInfo.base = 11
+            elif angleDiffMul == 6:
+                dartInfo.base = 8
+            elif angleDiffMul == 7:
+                dartInfo.base = 16
+            elif angleDiffMul == 8:
+                dartInfo.base = 7
+            elif angleDiffMul == 9:
+                dartInfo.base = 19
+            elif angleDiffMul == 10:
+                dartInfo.base = 3
+            elif angleDiffMul == 11:
+                dartInfo.base = 17
+            elif angleDiffMul == 12:
+                dartInfo.base = 2
+            elif angleDiffMul == 13:
+                dartInfo.base = 15
+            elif angleDiffMul == 14:
+                dartInfo.base = 10
+            elif angleDiffMul == 15:
+                dartInfo.base = 6
+            elif angleDiffMul == 16:
+                dartInfo.base = 13
+            elif angleDiffMul == 17:
+                dartInfo.base = 4
+            elif angleDiffMul == 18:
+                dartInfo.base = 18
+            elif angleDiffMul == 19:
+                dartInfo.base = 1
+            else:
+                #something went wrong
+                dartInfo.base = -300
+
+            #Calculating multiplier (and special cases for Bull's Eye):
+            for i in range(0, len(calibration.ring_radius)):
+                print calibration.ring_radius[i]
+                #Find the ring that encloses the dart
+                if magnitude <= calibration.ring_radius[i]:
+                    #Bull's eye, adjust base score
+                    if i == 0:
+                        dartInfo.base = 25
+                        dartInfo.multiplier = 2
+                    elif i == 1:
+                        dartInfo.base = 25
+                        dartInfo.multiplier = 1
+                    #triple ring
+                    elif i == 3:
+                        dartInfo.multiplier = 3
+                    #double ring
+                    elif i == 5:
+                        dartInfo.multiplier = 2
+                    #single
+                    elif i == 2 or i == 4:
+                        dartInfo.multiplier = 1
+                    #finished calculation
+                    break
+
+            #miss
+            if magnitude > calibration.ring_radius[5]:
+                dartInfo.base = 0
+                dartInfo.multiplier = 0
+
+            return (dartInfo.base, dartInfo.multiplier)
+        
+
+    #system not calibrated
+    except AttributeError as err1:
+        print err1
+        return (-1, -1)
+
+    except NameError as err2:
+        print err2
+        return (-2, -2)
 
 
 #Given a score region, this function returns the ideal location to aim
