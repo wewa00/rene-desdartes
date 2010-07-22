@@ -13,13 +13,17 @@ EVT_STOPLISTENER_ID = wx.NewId()
 
 DARTBOARD_REFMAG = 380
 DARTBOARD_REFANG = pi/20
-
+#wire thickness 1.5 mm
+DARTBOARD_RADII = [ 223.68,   170.0,   162.0,   107.0,   99.0,  31.8/2,  12.7/2] #in mm
+        
 DARTBOARD_TAN = '#F4E5C8'
 DARTBOARD_BLACK = '#1C1D18'
 DARTBOARD_RED = '#DD5035'
 DARTBOARD_GREEN = '#03845B'
 
 DARTS_HOME_POS = [ (10, 200), (10, 250), (10, 300), (760, 200), (760, 250), (760, 300)]
+#starts at right most
+DART_NUM = [6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5, 20, 1, 18, 4, 13]
 
 DART_CENTER_X = 500.0
 DART_CENTER_Y = 250.0
@@ -30,7 +34,7 @@ def LISTEN_EVENT(win, func):
 
 class ResultEvent(wx.PyEvent):
     """Simple event to carry arbitrary result data."""
-    def __init__(self, action, player, dartNum, dart):
+    def __init__(self, action, player, dartNum, dart, p1, p2):
         """Init Result Event."""
         wx.PyEvent.__init__(self)
         self.SetEventType(EVT_RESULT_ID)
@@ -38,6 +42,8 @@ class ResultEvent(wx.PyEvent):
         self.player = player
         self.dartNum = dartNum
         self.dart = dart
+        self.p1score = p1.score
+        self.p2score = p2.score
         
 class MyCanvas(wx.Panel):
     def __init__(self, parent, id,):
@@ -48,6 +54,10 @@ class MyCanvas(wx.Panel):
         mask = wx.Mask(bmp, '#010000') #make transparent bg
         bmp.SetMask(mask)
         self.bmp = bmp
+        
+        #score labels
+        self.p1 = wx.StaticText(self, -1, str(0), (30, 60))
+        self.p2 = wx.StaticText(self, -1, str(0), (780, 60))
         
         # dart ids
         self.objids = []
@@ -87,6 +97,8 @@ class MyCanvas(wx.Panel):
                     self.RefreshRect(r, False)                  #repaint the rectangle
                     self.lastpos = (event.GetX(),event.GetY())
             if event.LeftUp():
+                if self.dragid != -1 and self.objmovable[self.objids.index(self.dragid)]:
+                    print "here"
                 self.dragid = -1
                 #correctScore.set()
 
@@ -140,13 +152,9 @@ class MyCanvas(wx.Panel):
         x = DART_CENTER_X
         y = DART_CENTER_Y
         
-        #wire thickness 1.5 mm
-        radii = [ 223.68,   170.0,   162.0,   107.0,   99.0,  31.8/2,  12.7/2] #in mm
-        #radii = [250, 190, 178, 120, 110, 18, 10]
-        
         #Outer circle, full solid
         dc.SetBrush(wx.Brush(DARTBOARD_BLACK))
-        dc.DrawCircle(x, y, 19.0/17.0*radii[0])
+        dc.DrawCircle(x, y, 19.0/17.0*DARTBOARD_RADII[0])
         
         ringcolours = [DARTBOARD_GREEN, DARTBOARD_RED]
         areacolours = [DARTBOARD_TAN, DARTBOARD_BLACK]
@@ -157,21 +165,30 @@ class MyCanvas(wx.Panel):
             for sector in range(20):
                 theta1 = sector*pi/10 + DARTBOARD_REFANG
                 theta2 = (sector-1)*pi/10 + DARTBOARD_REFANG
-                x1 = x+19.0/17.0*radii[circle]*cos(theta1)
-                y1 = y+19.0/17.0*radii[circle]*sin(theta1)
-                x2 = x+19.0/17.0*radii[circle]*cos(theta2)
-                y2 = y+19.0/17.0*radii[circle]*sin(theta2)
+                x1 = x+19.0/17.0*DARTBOARD_RADII[circle]*cos(theta1)
+                y1 = y+19.0/17.0*DARTBOARD_RADII[circle]*sin(theta1)
+                x2 = x+19.0/17.0*DARTBOARD_RADII[circle]*cos(theta2)
+                y2 = y+19.0/17.0*DARTBOARD_RADII[circle]*sin(theta2)
                 colour = colourpair[sector%2]
                 dc.SetBrush(wx.Brush(colour))
                 dc.DrawArc(x1, y1, x2, y2, x, y)
                 #sector 15 is the top
         
+        #Draw the numbers
+        for sector in range(20):
+            theta = (2*sector-1)*pi/20 + DARTBOARD_REFANG
+            x1 = x+19.0/17.0*(DARTBOARD_RADII[0]+DARTBOARD_RADII[1])/2*cos(theta)
+            y1 = y+19.0/17.0*(DARTBOARD_RADII[0]+DARTBOARD_RADII[1])/2*sin(theta)
+            colour = '#FFFFFF'
+            dc.SetTextForeground(colour)
+            dc.DrawText(`DART_NUM[sector]`, x1, y1)
+        
         dc.SetBrush(wx.Brush(DARTBOARD_GREEN))
-        dc.DrawCircle(x, y, 19.0/17.0*radii[5])
+        dc.DrawCircle(x, y, 19.0/17.0*DARTBOARD_RADII[5])
         dc.SetBrush(wx.Brush(DARTBOARD_RED))
-        dc.DrawCircle(x, y, 19.0/17.0*radii[6])    
+        dc.DrawCircle(x, y, 19.0/17.0*DARTBOARD_RADII[6])    
     
-    def MoveDart(self, dartNum, p, movable):
+    def MoveDart(self, dartNum, p, movable, p1, p2):
         dartID = self.objids[dartNum]
         self.objmovable[dartNum] = movable
         r = self.pdc.GetIdBounds(dartID)
@@ -182,7 +199,9 @@ class MyCanvas(wx.Panel):
         r = r.Union(r2)
         r.Inflate(4,4)
         self.RefreshRect(r, False)
-    
+        self.p1.SetLabel(`p1`)
+        self.p2.SetLabel(`p2`)
+        
 class ListenerThread(threading.Thread):
     def __init__(self, parent_window):
         """init listener thread class"""
@@ -212,9 +231,9 @@ class ListenerThread(threading.Thread):
                         break
                 
                 if lastDart == None:
-                    wx.PostEvent(self.parent_window, ResultEvent("reset", scoreKeeper.currentPlayer, i, lastDart))
+                    wx.PostEvent(self.parent_window, ResultEvent("reset", scoreKeeper.currentPlayer, i, lastDart, scoreKeeper.playerOne, scoreKeeper.playerTwo))
                 else:
-                    wx.PostEvent(self.parent_window, ResultEvent("update", scoreKeeper.currentPlayer, i, lastDart))
+                    wx.PostEvent(self.parent_window, ResultEvent("update", scoreKeeper.currentPlayer, i, lastDart, scoreKeeper.playerOne, scoreKeeper.playerTwo))
                     
                 updateUI.clear()
         
@@ -312,11 +331,11 @@ class AppGUI(wx.App):
             x = DART_CENTER_X + event.dart.magnitude/DARTBOARD_REFMAG*190*cos(event.dart.angle)
             y = DART_CENTER_Y - event.dart.magnitude/DARTBOARD_REFMAG*190*sin(event.dart.angle)
             
-            self.panel.MoveDart(dartNum, (x, y), True)
+            self.panel.MoveDart(dartNum, (x, y), True, event.p1score, event.p2score)
             
         elif event.action == "reset":
             for i in range(6):
-                self.panel.MoveDart(i, DARTS_HOME_POS[i], False)
+                self.panel.MoveDart(i, DARTS_HOME_POS[i], False, event.p1score, event.p2score)
         
         
 class GUIThread(threading.Thread):
