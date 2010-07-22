@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import cv
 import time
+from math import radians
 from threading import Event
 from optparse import OptionParser
 
@@ -10,13 +11,14 @@ import GameEngine
 
 # some definitions
 window_name = "Get Dart Location"
-debug = False
-from_video = True
+debug = True
+from_video = False
 from_camera = False
 videofile = 'darts.wmv'
 cascadefile = 'default.xml'
 capture = 0
 init_get_dart_wait = 40
+initialized = False
 
 CLOCKS_PER_SEC = 1.0
 MHI_DURATION = 0.1
@@ -131,7 +133,7 @@ def InitGetDart():
         #image = cv.LoadImage(str(r"Dartboard Left.jpg"),cv.CV_LOAD_IMAGE_COLOR)
         image = calibration.image    
 
-def GetDart():
+def GetRawDartXY():
     global capture
     global image
         
@@ -157,8 +159,10 @@ def GetDart():
             cv.WaitKey(1)
         mouse_click_down.clear()
 
-        cv.Circle(image,(x_coordinate,y_coordinate),3,cv.CV_RGB(255, 0, 0),2)
-        cv.ShowImage(window_name, image)
+##        clone = cv.CloneImage(image)
+##
+##        cv.Circle(clone,(x_coordinate,y_coordinate),3,cv.CV_RGB(255, 0, 0),2)
+##        cv.ShowImage(window_name, clone)
          
         return (x_coordinate,y_coordinate)
     
@@ -272,36 +276,46 @@ def GetDart():
         raise Exception('GetDart() failed unexpectedly')
 ##        cv.DestroyAllWindows()
 
+def GetDart():
+    global initialized
+    if not initialized:
+        ##    need to call this function first before you can use GetDart()!!!
+        InitGetDart()
+        initialized = True
+        
+    raw_dart_location = GetRawDartXY()
+    correct_dart_location = dartRegion.DartLocation(raw_dart_location)
+
+##    show the dart throw in a seperate window
+    new_image = cv.CloneImage(calibration.image)        
+    cv.WarpPerspective(calibration.image, new_image, calibration.mapping)
+    cv.Circle(new_image, correct_dart_location, 3,cv.CV_RGB(255, 0, 0),2, 8)
+    cv.ShowImage("new dart location",new_image)
+
+    dartThrowInfo = dartRegion.DartRegion(correct_dart_location)
+
+    ##HACK!!!!! NORMALIZE dartThrowInfo
+    
+    ##Bryan's calibration code uses degrees; JP's UI uses radians
+    ##(both have the centre line bisecting the base 6 region as '0'
+    ##JP's UI scales magnitude to 380, where 380 is the outside of the triple ring
+    ##so, we need to convert to radians, and we need to scale the magnitude by the factor 380/ring_radius[5]
+    ##ring_radious[5] is the raw magnitude of the outside of the double ring
+
+    dartThrowInfo.angle = radians(dartThrowInfo.angle)
+    dartThrowInfo.magnitude = dartThrowInfo.magnitude * (380./calibration.ring_radius[5]) 
+
+    return dartThrowInfo    
+
 if __name__ == '__main__':
     #calibrate first
     calibration.Calibration()
 
-##    print "Click on a location to simulate a dart throw!"
-
-    raw_dart_location = []
-##    need to call this function first before you can use GetDart()!!!
-    InitGetDart()
-
     while True:
-        raw_dart_location = GetDart()
-        
-        print raw_dart_location
+        dartThrowInfo = GetDart()      
 
-        correct_dart_location = dartRegion.DartLocation(raw_dart_location)
-
-        print correct_dart_location
-
-        new_image = cv.CloneImage(calibration.image)
-        
-        cv.WarpPerspective(calibration.image, new_image, calibration.mapping)
-        cv.Circle(new_image, correct_dart_location, 3,cv.CV_RGB(255, 0, 0),2, 8)
-        cv.ShowImage("new dart location",new_image)
-
-        dartThrowInfo = GameEngine.dartThrow()
-        dartThrowInfo = dartRegion.DartRegion(correct_dart_location)
-
-        print "The dart's score:"
-        print dartThrowInfo.score
+        print "The dart's base region:"
+        print dartThrowInfo.base
         print "The dart's multiplier:"
         print dartThrowInfo.multiplier
         print "The dart's magnitude:"
@@ -315,4 +329,3 @@ if __name__ == '__main__':
         cv.DestroyAllWindows()
         
     cv.DestroyAllWindows()
-##        cv.DestroyWindow("new dart location");

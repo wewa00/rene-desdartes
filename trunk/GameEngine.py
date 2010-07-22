@@ -9,6 +9,8 @@ import ScoreKeeper
 import GUImodule
 import time
 import random
+import get_dart
+import calibration
 from math import pi
 
 # just a sample class so I can "create" dartThrows with the get throw function
@@ -28,19 +30,20 @@ class settings:
         self.playerOne = "One"
         self.playerTwo = "Two"
         self.gameType = 1 #1 is normal, 2 is practice
-    
-def getThrow():
-    throw = dartThrow()
-    s = raw_input('--> ')
-    throw.base = 4 #input("Enter Base Region: ")
-    throw.multiplier = 1 #input("Enter Multiplier: ")
-    throw.magnitude = 380*random.random() #input("Enter Magnitude: ")
-    throw.angle = 2*pi*random.random() #input("Enter Angle: ")
-    
-    # my hack of triggering an event =P
-    if throw.base == 25:
-        correctScore.set()
-    return throw
+
+##Use get_dart.GetDart() instead
+##def getThrow():
+##    throw = dartThrow()
+##    s = raw_input('--> ')
+##    throw.base = 4 #input("Enter Base Region: ")
+##    throw.multiplier = 1 #input("Enter Multiplier: ")
+##    throw.magnitude = 380*random.random() #input("Enter Magnitude: ")
+##    throw.angle = 2*pi*random.random() #input("Enter Angle: ")
+##    
+##    # my hack of triggering an event =P
+##    if throw.base == 25:
+##        correctScore.set()
+##    return throw
 
 # ====================== EVERYTHING ABOVE IS TEMPORARY ========================
 class Player:
@@ -102,8 +105,10 @@ class DartGame:
         # if the score is 0, it means the multiplier is NOT 2, they still bust
         if self.currentPlayer.score <= 0:
             self.currentPlayer.score = self.currentPlayer.score + (throwResult.base * throwResult.multiplier)
-            self.switchPlayer()
+            # switch player AFTER we print out " BUSTED. Too bad!"
             print self.currentPlayer.name + " BUSTED. Too bad!"
+            self.switchPlayer()
+            
             updateUI.set()
         
             while updateUI.isSet():
@@ -157,11 +162,16 @@ def playGame (settings):
     
     #passing the score keeper instance to the GUI
     g.initScoreKeeper(scoreKeeper)
+
+    # don't know where's a good place to put this, but will put it here for now
+    calibration.Calibration()
     
     while ( game.stillPlaying == True ):
-        throwResult = getThrow()
+##        Now uses get_dart.GetDart()
+        throwResult = get_dart.GetDart()#getThrow()
+
         # uncomment to get it to print out dart throw
-        #throwResult.printThrow()
+        throwResult.printThrow()
         # check correctScore event
         if correctScore.isSet():
             # will figure this out later
