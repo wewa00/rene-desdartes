@@ -1,4 +1,8 @@
 import random
+import dartRegion
+import GameEngine
+import math
+import calibration
 
 # difficulty changes variance
 easy = 20
@@ -197,8 +201,8 @@ class AIOpponent:
                 elif scoreLeft == 195:
                     score = 25
                     multiplier = 2
-                # numbers to avoid 112, 118, 128, 129
-                elif scoreLeft == 132 or scoreLeft == 138 or scoreLeft == 149:
+                # numbers to avoid 112, 118, 125, 128, 129
+                elif scoreLeft == 132 or scoreLeft == 138 or scoreLeft == 145 or scoreLeft == 149:
                     score = 19
                 elif scoreLeft == 148:
                     score = 18
@@ -213,26 +217,51 @@ class AIOpponent:
         (score, multiplier) = self.selectTarget(scoreLeft, dartsLeft)
         # pass target (score, multipler) to bryan
         # ======= dart = getTarget (score, multiplier) ======
-        #dart.magnitude = random.gauss(target.magnitude, self.difficulty)
-        #dart.angle = random.gauss(target.angle, self.difficulty)
-        if multiplier == 3:
-            multiplierWord = "triple "
-        elif multiplier == 2:
-            multiplierWord = "double "
-        else:
-            multiplierWord = "single "
-        print "aim at " + multiplierWord + str(score) + " when " + str(scoreLeft) + " Left"
-        return True
+        (magnitude, angle) = dartRegion.RegionToLocation(score, multiplier)
+        print "The mag: " + str(magnitude) + " and the angle: " + str(angle)
+        magnitude = random.gauss(magnitude, self.difficulty)
+        angle = random.gauss(angle, self.difficulty)
+        
+        (score, multiplier) = dartRegion.LocationToRegion(angle, magnitude)
+        print "The score: " + str(score) + " and the multi: " + str(multiplier)
+        
+        # scale the angle and magnitude
+        angle = math.radians(angle)
+        magnitude = magnitude * (380./calibration.ring_radius[5]) 
+        #if multiplier == 3:
+            #multiplierWord = "triple "
+        #elif multiplier == 2:
+            #multiplierWord = "double "
+        #else:
+            #multiplierWord = "single "
+        #print "aim at " + multiplierWord + str(score) + " when " + str(scoreLeft) + " Left"
+        dartThrow = GameEngine.dartThrow()
+        dartThrow.base = score
+        
+        dartThrow.multiplier = multiplier
+        dartThrow.magnitude = magnitude
+        dartThrow.angle = angle
+        return dartThrow
     
     
 if __name__ == "__main__":
     AI = AIOpponent(hard)
-    test = "B"
+    test = "C"
     if test == "A":
         while (True):
             scoreLeft = input("Score Left: ")
             dartsLeft = input("Darts Left: ") 
             dart = AI.generateThrow(scoreLeft, dartsLeft)
+    elif test == "C":
+        AI.generateThrow(501,3)
+        AI.generateThrow(441,2)
+        AI.generateThrow(381,1)
+        AI.generateThrow(321,3)
+        AI.generateThrow(261,2)
+        AI.generateThrow(201,1)
+        AI.generateThrow(141,3)
+        AI.generateThrow(81,2)
+        AI.generateThrow(24,1)
     else:
         dartsLeft = 3
         for i in range(2, 200):

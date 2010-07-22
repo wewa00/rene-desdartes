@@ -175,7 +175,7 @@ def DartRegion(dart_loc):
 def LocationToRegion(angle, magnitude):
     try:
         if calibration.calibrationComplete:
-            print "Finding dart throw information"
+            #print "Finding dart throw information"
 
             dartInfo = GameEngine.dartThrow()
 
@@ -228,7 +228,7 @@ def LocationToRegion(angle, magnitude):
 
             #Calculating multiplier (and special cases for Bull's Eye):
             for i in range(0, len(calibration.ring_radius)):
-                print calibration.ring_radius[i]
+                #print calibration.ring_radius[i]
                 #Find the ring that encloses the dart
                 if magnitude <= calibration.ring_radius[i]:
                     #Bull's eye, adjust base score
