@@ -324,18 +324,18 @@ def RegionToLocation(score, multiplier):
             #miss
             if multiplier == 1:
                 #always aim at the bigger region
-                dart_mag = calibration.ring_radius[3] + calibration.ring_radius[4]
+                dart_mag = (calibration.ring_radius[3] + calibration.ring_radius[4])/2
             elif multiplier == 2:
-                dart_mag = calibration.ring_radius[4] + calibration.ring_radius[5]
+                dart_mag = (calibration.ring_radius[4] + calibration.ring_radius[5])/2
             elif multiplier == 3:
-                dart_mag = calibration.ring_radius[2] + calibration.ring_radius[3]
+                dart_mag = (calibration.ring_radius[2] + calibration.ring_radius[3])/2
             else:
                 dart_mag = 0
 
             #special cases: bull's eye and double bull's eye
             if score == 25:
                 if multiplier == 1:
-                    dart_mag = calibration.ring_radius[0] + calibration.ring_radius[1]
+                    dart_mag = (calibration.ring_radius[0] + calibration.ring_radius[1])/2
                     dart_angle = randint(0, 360)
                 elif multiplier == 2:
                     dart_mag = 0
