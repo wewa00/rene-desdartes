@@ -9,9 +9,9 @@ import math
 
 # some definitions
 window_name = "Capture from Cam!"
-debug = True
-from_video = False
-from_camera = False
+debug = False
+from_video = True
+from_camera = True
 
 def on_mouse(event, x, y, flags, param):
     if event==cv.CV_EVENT_LBUTTONDOWN:
