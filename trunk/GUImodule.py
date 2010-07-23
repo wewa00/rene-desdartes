@@ -23,7 +23,7 @@ DARTBOARD_GREEN = '#03845B'
 
 DARTS_HOME_POS = [ (10, 200), (10, 250), (10, 300), (760, 200), (760, 250), (760, 300)]
 #starts at right most
-DART_NUM = [6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5, 20, 1, 18, 4, 13]
+DART_NUM = [6, 13, 4, 18, 1, 20, 5, 12, 9, 14, 11, 8, 16, 7, 19, 3, 17, 2, 15, 10]
 
 DART_CENTER_X = 500.0
 DART_CENTER_Y = 250.0
@@ -122,15 +122,20 @@ class MyCanvas(wx.Panel):
                     if self.boardDartsFlag == "p1":
                         dartIndex = self.objids.index(self.dragid)
                         
+                        #Get the old score and add it (penalize) the current score
                         b = scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].base
                         mul = scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].multiplier
+                        scoreKeeper.playerOne.score += b*mul
                         
-                        scoreKeeper.playerOne.score -= b*mul #subtract the old score
-                        b, mul, m, a = self.GetDartParameters( self.lastpos )
-                        #print [b, mul, m, a]
-                        scoreKeeper.playerOne.score += b*mul #add the new score
+                        #Calculate new dart parameters from the moved dart
+                        x, y, w, h = self.pdc.GetIdBounds(self.dragid)
+                        b, mul, m, a = self.GetDartParameters( (x, y) ) 
+
+                        #Fix the scores
+                        scoreKeeper.playerOne.score -= b*mul #add the new score
                         self.UpdateScore(scoreKeeper.playerOne.score, scoreKeeper.playerTwo.score)
                         
+                        #Update the dart parameters
                         scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].base = b
                         scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].multiplier = mul
                         scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].magnitude = m
@@ -138,15 +143,20 @@ class MyCanvas(wx.Panel):
                     elif self.boardDartsFlag == "p2":
                         dartIndex = self.objids.index(self.dragid) - 3
                         
+                        #Get the old score and add it (penalize) the current score
                         b = scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].base
                         mul = scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].multiplier
-                        
-                        scoreKeeper.playerTwo.score -= b*mul
-                        b, mul, m, a = self.GetDartParameters( self.lastpos )
-                        #print [b, mul, m, a]
                         scoreKeeper.playerTwo.score += b*mul
+                        
+                        #Calculate new dart parameters from the moved dart
+                        x, y, w, h = self.pdc.GetIdBounds(self.dragid)
+                        b, mul, m, a = self.GetDartParameters( (x, y) )  
+                        
+                        #Fix the scores
+                        scoreKeeper.playerTwo.score -= b*mul
                         self.UpdateScore(scoreKeeper.playerOne.score, scoreKeeper.playerTwo.score)
                         
+                        #Update the dart parameters
                         scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].base = b
                         scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].multiplier = mul
                         scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].magnitude = m
@@ -156,15 +166,21 @@ class MyCanvas(wx.Panel):
                             dartIndex = self.objids.index(self.dragid)
                         else:
                             dartIndex = self.objids.index(self.dragid) - 3
-                            
+                        
+                        #Get the old score and add it (penalize) the current score                        
                         b = scoreKeeper.currentDartSet[dartIndex].base
                         mul = scoreKeeper.currentDartSet[dartIndex].multiplier
+                        scoreKeeper.currentPlayer.score += b*mul
+                        
+                        #Calculate new dart parameters from the moved dart
+                        x, y, w, h = self.pdc.GetIdBounds(self.dragid)
+                        b, mul, m, a = self.GetDartParameters( (x, y) )   
+
+                        #Fix the scores
                         scoreKeeper.currentPlayer.score -= b*mul
-                        b, mul, m, a = self.GetDartParameters( self.lastpos )
-                        print [b, mul, m, a]
-                        scoreKeeper.playerTwo.score += b*mul
                         self.UpdateScore(scoreKeeper.playerOne.score, scoreKeeper.playerTwo.score)
                         
+                        #Update the dart parameters
                         scoreKeeper.currentDartSet[dartIndex].base = b
                         scoreKeeper.currentDartSet[dartIndex].multiplier = mul
                         scoreKeeper.currentDartSet[dartIndex].magnitude = m
@@ -176,14 +192,55 @@ class MyCanvas(wx.Panel):
         x, y = p
         
         magnitude = sqrt(pow((x - DART_CENTER_X),2) + pow((DART_CENTER_Y - y),2))*DARTBOARD_REFMAG/190
-        angle = atan((DART_CENTER_Y - y)/(x - DART_CENTER_X))
+        if (x - DART_CENTER_X) != 0:
+            angle = atan((DART_CENTER_Y - y)/(x - DART_CENTER_X))
+        else:
+            if (DART_CENTER_Y - y) > 0:
+                angle = pi/2
+            else:
+                angle = -pi/2
+            
+        if x - DART_CENTER_X < 0:
+            angle+=pi
         
-        print x
-        print DART_CENTER_X + magnitude/DARTBOARD_REFMAG*190*cos(angle)
-        print y 
-        print DART_CENTER_Y - magnitude/DARTBOARD_REFMAG*190*sin(angle)
+        angle = angle%(2*pi)
         
-        return (10,1,magnitude,angle)
+        #starting from the outer ring, check if the magnitude lies outside that ring
+        #is not, go smaller.  Stop at the biggest ring that has lower radius than magnitude
+        for radius in DARTBOARD_RADII:
+            if magnitude/DARTBOARD_REFMAG*190 > radius*19.0/17.0:
+                break
+        
+        base = -1
+        
+        if DARTBOARD_RADII.index(radius) == 0 or DARTBOARD_RADII.index(radius) == 1: #Outside dartboard play area
+            multiplier = 0;
+            base = 0
+        elif DARTBOARD_RADII.index(radius) == 2: #double ring
+            multiplier = 2;
+        elif DARTBOARD_RADII.index(radius) == 4: #triple ring
+            multiplier = 3;
+        elif DARTBOARD_RADII.index(radius) == 3 or DARTBOARD_RADII.index(radius) == 5:
+            multiplier = 1;
+        #bull or double bull. either since the for loop above stops at 6 regardless...
+        elif DARTBOARD_RADII.index(radius) == 6: 
+            if magnitude < radius:
+                base = 50
+            else:
+                base = 25
+            multiplier = 1;
+            
+        if base == -1: #need to figure out regions
+            for region in range(20):
+                theta1 = region*pi/10 + DARTBOARD_REFANG
+                theta2 = (region-1)*pi/10 + DARTBOARD_REFANG
+                if angle <= theta1 and angle >= theta2:
+                    base = DART_NUM[region]
+                    break
+        
+        print base, multiplier, magnitude, angle
+            
+        return (base,multiplier,magnitude,angle)
                 
     def OnPaint(self, event):
         # Create a buffered paint DC.  It will create the real
@@ -246,12 +303,12 @@ class MyCanvas(wx.Panel):
         for circle in range(1,5):
             colourpair = ringcolours if circle % 2 == 1 else areacolours
             for sector in range(20):
-                theta1 = sector*pi/10 + DARTBOARD_REFANG
-                theta2 = (sector-1)*pi/10 + DARTBOARD_REFANG
+                theta1 = (sector-1)*pi/10 + DARTBOARD_REFANG
+                theta2 = sector*pi/10 + DARTBOARD_REFANG
                 x1 = x+19.0/17.0*DARTBOARD_RADII[circle]*cos(theta1)
-                y1 = y+19.0/17.0*DARTBOARD_RADII[circle]*sin(theta1)
+                y1 = y-19.0/17.0*DARTBOARD_RADII[circle]*sin(theta1)
                 x2 = x+19.0/17.0*DARTBOARD_RADII[circle]*cos(theta2)
-                y2 = y+19.0/17.0*DARTBOARD_RADII[circle]*sin(theta2)
+                y2 = y-19.0/17.0*DARTBOARD_RADII[circle]*sin(theta2)
                 colour = colourpair[sector%2]
                 dc.SetBrush(wx.Brush(colour))
                 dc.DrawArc(x1, y1, x2, y2, x, y)
@@ -261,7 +318,7 @@ class MyCanvas(wx.Panel):
         for sector in range(20):
             theta = (2*sector-1)*pi/20 + DARTBOARD_REFANG
             x1 = x+19.0/17.0*(DARTBOARD_RADII[0]+DARTBOARD_RADII[1])/2*cos(theta)
-            y1 = y+19.0/17.0*(DARTBOARD_RADII[0]+DARTBOARD_RADII[1])/2*sin(theta)
+            y1 = y-19.0/17.0*(DARTBOARD_RADII[0]+DARTBOARD_RADII[1])/2*sin(theta)
             colour = '#FFFFFF'
             dc.SetTextForeground(colour)
             dc.DrawText(`DART_NUM[sector]`, x1, y1)
