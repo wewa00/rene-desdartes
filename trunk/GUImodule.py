@@ -1,7 +1,7 @@
 import wx
 import images
 import time
-from math import sin, cos, pi
+from math import sin, cos, pi, sqrt, atan, pow
 import threading
 import thread
 import random
@@ -55,9 +55,30 @@ class MyCanvas(wx.Panel):
         bmp.SetMask(mask)
         self.bmp = bmp
         
+        self.boardDartsFlag = "p1"
+        self.boardDarts = [None, None, None]
+        
         #score labels
         self.p1 = wx.StaticText(self, -1, str(0), (30, 60))
         self.p2 = wx.StaticText(self, -1, str(0), (780, 60))
+        
+        #score buttons
+        self.buttons = []
+        
+        bp1ID = wx.NewId()
+        bp1 = wx.Button(self, bp1ID, "previous", (30, 90))
+        self.Bind(wx.EVT_BUTTON, self.OnClick, bp1)
+        self.buttons.append(bp1ID)
+        
+        bp2ID = wx.NewId()
+        bp2 = wx.Button(self, bp2ID, "previous", (780, 90))
+        self.Bind(wx.EVT_BUTTON, self.OnClick, bp2)
+        self.buttons.append(bp2ID)
+        
+        currID = wx.NewId()
+        curr = wx.Button(self, currID, "current", (250, 0))
+        self.Bind(wx.EVT_BUTTON, self.OnClick, curr) 
+        self.buttons.append(currID)
         
         # dart ids
         self.objids = []
@@ -98,10 +119,72 @@ class MyCanvas(wx.Panel):
                     self.lastpos = (event.GetX(),event.GetY())
             if event.LeftUp():
                 if self.dragid != -1 and self.objmovable[self.objids.index(self.dragid)]:
-                    print "here"
+                    if self.boardDartsFlag == "p1":
+                        dartIndex = self.objids.index(self.dragid)
+                        
+                        b = scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].base
+                        mul = scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].multiplier
+                        
+                        scoreKeeper.playerOne.score -= b*mul #subtract the old score
+                        b, mul, m, a = self.GetDartParameters( self.lastpos )
+                        #print [b, mul, m, a]
+                        scoreKeeper.playerOne.score += b*mul #add the new score
+                        self.UpdateScore(scoreKeeper.playerOne.score, scoreKeeper.playerTwo.score)
+                        
+                        scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].base = b
+                        scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].multiplier = mul
+                        scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].magnitude = m
+                        scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1][dartIndex].angle = a
+                    elif self.boardDartsFlag == "p2":
+                        dartIndex = self.objids.index(self.dragid) - 3
+                        
+                        b = scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].base
+                        mul = scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].multiplier
+                        
+                        scoreKeeper.playerTwo.score -= b*mul
+                        b, mul, m, a = self.GetDartParameters( self.lastpos )
+                        #print [b, mul, m, a]
+                        scoreKeeper.playerTwo.score += b*mul
+                        self.UpdateScore(scoreKeeper.playerOne.score, scoreKeeper.playerTwo.score)
+                        
+                        scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].base = b
+                        scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].multiplier = mul
+                        scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].magnitude = m
+                        scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1][dartIndex].angle = a
+                    else:
+                        if scoreKeeper.currentPlayer == scoreKeeper.playerOne:
+                            dartIndex = self.objids.index(self.dragid)
+                        else:
+                            dartIndex = self.objids.index(self.dragid) - 3
+                            
+                        b = scoreKeeper.currentDartSet[dartIndex].base
+                        mul = scoreKeeper.currentDartSet[dartIndex].multiplier
+                        scoreKeeper.currentPlayer.score -= b*mul
+                        b, mul, m, a = self.GetDartParameters( self.lastpos )
+                        print [b, mul, m, a]
+                        scoreKeeper.playerTwo.score += b*mul
+                        self.UpdateScore(scoreKeeper.playerOne.score, scoreKeeper.playerTwo.score)
+                        
+                        scoreKeeper.currentDartSet[dartIndex].base = b
+                        scoreKeeper.currentDartSet[dartIndex].multiplier = mul
+                        scoreKeeper.currentDartSet[dartIndex].magnitude = m
+                        scoreKeeper.currentDartSet[dartIndex].angle = a
+                    correctScore.set()
                 self.dragid = -1
-                #correctScore.set()
-
+    
+    def GetDartParameters(self, p ):
+        x, y = p
+        
+        magnitude = sqrt(pow((x - DART_CENTER_X),2) + pow((DART_CENTER_Y - y),2))*DARTBOARD_REFMAG/190
+        angle = atan((DART_CENTER_Y - y)/(x - DART_CENTER_X))
+        
+        print x
+        print DART_CENTER_X + magnitude/DARTBOARD_REFMAG*190*cos(angle)
+        print y 
+        print DART_CENTER_Y - magnitude/DARTBOARD_REFMAG*190*sin(angle)
+        
+        return (10,1,magnitude,angle)
+                
     def OnPaint(self, event):
         # Create a buffered paint DC.  It will create the real
         # wx.PaintDC and then blit the bitmap to it when dc is
@@ -188,7 +271,7 @@ class MyCanvas(wx.Panel):
         dc.SetBrush(wx.Brush(DARTBOARD_RED))
         dc.DrawCircle(x, y, 19.0/17.0*DARTBOARD_RADII[6])    
     
-    def MoveDart(self, dartNum, p, movable, p1, p2):
+    def MoveDart(self, dartNum, p, movable):
         dartID = self.objids[dartNum]
         self.objmovable[dartNum] = movable
         r = self.pdc.GetIdBounds(dartID)
@@ -199,9 +282,47 @@ class MyCanvas(wx.Panel):
         r = r.Union(r2)
         r.Inflate(4,4)
         self.RefreshRect(r, False)
+        
+    def UpdateScore(self, p1, p2):
         self.p1.SetLabel(`p1`)
         self.p2.SetLabel(`p2`)
-        
+    
+    def MakeCurrent(self):
+        for i in range(6):
+            self.MoveDart(i, DARTS_HOME_POS[i], False)
+        self.boardDartsFlag = "c"
+        self.boardDarts = scoreKeeper.currentDartSet
+        for i in range(3):
+            if self.boardDarts[i] != None:
+                x = DART_CENTER_X + self.boardDarts[i].magnitude/DARTBOARD_REFMAG*190*cos(self.boardDarts[i].angle)
+                y = DART_CENTER_Y - self.boardDarts[i].magnitude/DARTBOARD_REFMAG*190*sin(self.boardDarts[i].angle)
+                if scoreKeeper.currentPlayer == scoreKeeper.playerOne:
+                    self.MoveDart(i, (x,y),True)
+                else:
+                    self.MoveDart(i+3, (x,y),True)
+    
+    def OnClick(self, event):
+        for i in range(6):
+                self.MoveDart(i, DARTS_HOME_POS[i], False)
+    
+        if event.GetId() == self.buttons[0]:
+            self.boardDartsFlag = "p1"
+            self.boardDarts = scoreKeeper.playerOne.throwHistory[len(scoreKeeper.playerOne.throwHistory)-1]
+            for i in range(3):
+                x = DART_CENTER_X + self.boardDarts[i].magnitude/DARTBOARD_REFMAG*190*cos(self.boardDarts[i].angle)
+                y = DART_CENTER_Y - self.boardDarts[i].magnitude/DARTBOARD_REFMAG*190*sin(self.boardDarts[i].angle)
+                self.MoveDart(i, (x,y),True)            
+
+        elif event.GetId() == self.buttons[1]:
+            self.boardDartsFlag = "p2"
+            self.boardDarts = scoreKeeper.playerTwo.throwHistory[len(scoreKeeper.playerTwo.throwHistory)-1]
+            for i in range(3):
+                x = DART_CENTER_X + self.boardDarts[i].magnitude/DARTBOARD_REFMAG*190*cos(self.boardDarts[i].angle)
+                y = DART_CENTER_Y - self.boardDarts[i].magnitude/DARTBOARD_REFMAG*190*sin(self.boardDarts[i].angle)
+                self.MoveDart(i+3, (x,y),True)        
+        else:
+            self.MakeCurrent()
+            
 class ListenerThread(threading.Thread):
     def __init__(self, parent_window):
         """init listener thread class"""
@@ -331,11 +452,14 @@ class AppGUI(wx.App):
             x = DART_CENTER_X + event.dart.magnitude/DARTBOARD_REFMAG*190*cos(event.dart.angle)
             y = DART_CENTER_Y - event.dart.magnitude/DARTBOARD_REFMAG*190*sin(event.dart.angle)
             
-            self.panel.MoveDart(dartNum, (x, y), True, event.p1score, event.p2score)
+            self.panel.MakeCurrent()
+            self.panel.MoveDart(dartNum, (x, y), True)
+            self.panel.UpdateScore(event.p1score, event.p2score)
             
         elif event.action == "reset":
+            self.panel.MakeCurrent()
             for i in range(6):
-                self.panel.MoveDart(i, DARTS_HOME_POS[i], False, event.p1score, event.p2score)
+                self.panel.MoveDart(i, DARTS_HOME_POS[i], False)
         
         
 class GUIThread(threading.Thread):
