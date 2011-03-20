@@ -13,7 +13,7 @@ debug = False
 from_video = True
 from_camera = True
 videofile = 'video3.avi'
-cascadefile = 'new_pos_842.neg_boards_875.cascade_14.xml'
+cascadefile = 'new_pos_842.neg_boards_875.cascade_18.xml'
 
 def on_mouse(event, x, y, flags, param):
     if event==cv.CV_EVENT_LBUTTONDOWN:
