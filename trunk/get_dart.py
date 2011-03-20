@@ -14,8 +14,7 @@ window_name = "Get Dart Location"
 ##debug = True
 ##from_video = False
 ##from_camera = False
-videofile = 'darts.wmv'
-cascadefile = 'crude.xml'
+
 capture = 0
 init_get_dart_wait = 40
 initialized = False
@@ -118,7 +117,7 @@ def InitGetDart():
             if calibration.from_camera:
                 capture = cv.CaptureFromCAM(0)
             else:
-                capture = cv.CaptureFromFile(videofile)
+                capture = cv.CaptureFromFile(calibration.videofile)
                 
             cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
             cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
@@ -193,7 +192,7 @@ def GetRawDartXY():
 ##        else:
 ##            capture = cv.CaptureFromFile(videofile)
 
-        cascade = cv.Load(cascadefile)
+        cascade = cv.Load(calibration.cascadefile)
 
 ##        cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
 ##        cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT , 480)
