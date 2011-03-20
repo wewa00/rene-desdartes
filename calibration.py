@@ -12,6 +12,8 @@ window_name = "Capture from Cam!"
 debug = False
 from_video = True
 from_camera = True
+videofile = 'video3.avi'
+cascadefile = 'new_pos_842.neg_boards_875.cascade_14.xml'
 
 def on_mouse(event, x, y, flags, param):
     if event==cv.CV_EVENT_LBUTTONDOWN:
@@ -43,7 +45,7 @@ def Calibration():
         if from_camera:
             capture = cv.CaptureFromCAM(0)
         else:
-            capture = cv.CaptureFromFile('darts.wmv')
+            capture = cv.CaptureFromFile(videofile)
 ##        image = 0
         cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH, 640)
         cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
