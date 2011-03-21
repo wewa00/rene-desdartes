@@ -183,6 +183,7 @@ def playGame (settings):
             throwResult = AIPlayer.generateThrow(game.currentPlayer.score, game.dartsLeft)
         else:
             throwResult = get_dart.GetDart()#getThrow()
+            time.sleep(0.1)
 
         # uncomment to get it to print out dart throw
         throwResult.printThrow()
