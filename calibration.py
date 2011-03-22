@@ -15,7 +15,7 @@ window_name = "Capture from Cam!"
 prev_calibration_window = "Previous Calibration"
 debug = False
 from_video = True
-from_camera = False
+from_camera = True
 videofile = 'video3.avi'
 cascadefile = 'new_pos_1238.neg_boards_1927.cascade_17.xml'
 
