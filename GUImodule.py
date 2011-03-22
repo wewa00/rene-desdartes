@@ -390,8 +390,6 @@ class ListenerThread(threading.Thread):
         
     def run(self):
         """Start Listener Thread."""
-        player = 1
-        dartnum = 1
         while 1:
             if updateUI.isSet():
                 #Get last dart in current dart set
@@ -441,11 +439,11 @@ class AppGUI(wx.App):
         menuBar = wx.MenuBar()
         fileMenu = wx.Menu()
         
-        fileMenu.Append(EVT_STARTLISTENER_ID, "&New Game", "Starts a new game")
-        self.Bind(wx.EVT_MENU, self.StartGame, id=EVT_STARTLISTENER_ID)
+        #fileMenu.Append(EVT_STARTLISTENER_ID, "&New Game", "Starts a new game")
+        #self.Bind(wx.EVT_MENU, self.StartGame, id=EVT_STARTLISTENER_ID)
         
-        fileMenu.Append(EVT_STOPLISTENER_ID, "&End Game", "Starts a new game")
-        self.Bind(wx.EVT_MENU, self.StopGame, id=EVT_STOPLISTENER_ID)
+        #fileMenu.Append(EVT_STOPLISTENER_ID, "&End Game", "Ends this game")
+        #self.Bind(wx.EVT_MENU, self.StopGame, id=EVT_STOPLISTENER_ID)
         
         fileMenu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit Application")
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
@@ -459,7 +457,7 @@ class AppGUI(wx.App):
         #----------------------------------------------------------
         #Create event handler for listening
         LISTEN_EVENT(self, self.OnListen)
-        self.listener = None
+        self.listener = ListenerThread(self)
         #----------------------------------------------------------
         #Create panel as drawing surface
         panel = MyCanvas(frame, wx.ID_ANY)
@@ -474,19 +472,20 @@ class AppGUI(wx.App):
         self.frame = frame 
         return True
                
-    def StartGame (self, event):
-        """Start second thread for listening to events"""
-        if not self.listener: #only have one listener
-            #self.status.SetLabel('Listening')
-            print 'listening'
-            self.listener = ListenerThread(self)
+#    def StartGame (self, event):
+#        """Start second thread for listening to events"""
+#        if not self.listener: #only have one listener
+#            #self.status.SetLabel('Listening')
+#            print 'listening'
+#            self.listener = ListenerThread(self)
     
-    def StopGame (self, event):
-        """Stop second thread for listening to events"""
-        if self.listener:
-            #self.status.SetLabel('Game Stopped')
-            print 'Stop'
-            self.listener.close()
+#    def StopGame (self, event):
+#        """Stop second thread for listening to events"""
+#        if self.listener:
+#            #self.status.SetLabel('Game Stopped')
+#            print 'Stop'
+#            self.listener.close()
+#            self.listener = None
     
     def OnClose (self, event):
         if self.listener:
@@ -518,8 +517,7 @@ class AppGUI(wx.App):
             for i in range(6):
                 self.panel.MoveDart(i, DARTS_HOME_POS[i], False)
         
-        
-class GUIThread(threading.Thread):
+class GUIThread(threading.Thread):    
     def __init__(self):
         threading.Thread.__init__(self)
         

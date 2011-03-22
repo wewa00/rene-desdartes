@@ -33,7 +33,7 @@ class dartThrow:
 #sample settings class
 class settings:
     def __init__(self):
-        self.playerOne = "Player"
+        self.playerOne = "CPU1"
         self.playerTwo = "CPU2"
         self.gameType = 1 #1 is normal, 2 is practice
 
@@ -171,9 +171,6 @@ def playGame (settings):
     #passing the score keeper instance to the GUI
     g.initScoreKeeper(scoreKeeper)
 
-    # don't know where's a good place to put this, but will put it here for now
-    calibration.Calibration()
-
     # this call loads the camera capture and waits a few frames for the picture to stabilize
     get_dart.InitGetDart()
     
@@ -222,9 +219,13 @@ if __name__ == "__main__":
 
     g.start()
     
+    # don't know where's a good place to put this, but will put it here for now
+    calibration.Calibration()
+    
     # start the engine in a thread!
     # buggy, it crashes at various points, don't know why
     # thread.start_new_thread(startEngine,())
-    setting = settings()
-    playGame(setting)
+    while 1:  
+        setting = settings()
+        playGame(setting)
     
