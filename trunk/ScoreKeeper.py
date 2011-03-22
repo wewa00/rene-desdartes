@@ -25,3 +25,4 @@ class ScoreKeeper(object):
             self.playerOne.score = -1
             self.playerTwo.score = -1
         game.scoreKeeper = self
+        
