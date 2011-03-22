@@ -33,8 +33,8 @@ class dartThrow:
 #sample settings class
 class settings:
     def __init__(self):
-        self.playerOne = "CPU1"
-        self.playerTwo = "CPU2"
+        self.playerOne = "Player1"
+        self.playerTwo = "Player2"
         self.gameType = 1 #1 is normal, 2 is practice
 
 ##Use get_dart.GetDart() instead
@@ -163,14 +163,13 @@ class DartGame:
         fileHandle.close()
     
 def playGame (settings):
+    global scoreKeeper
+    
     print "Starting Game"
     game = DartGame(settings)
-    global scoreKeeper
-    scoreKeeper = ScoreKeeper.ScoreKeeper(game)
     AIPlayer = AI.AIOpponent(difficulty)
-    #passing the score keeper instance to the GUI
-    g.initScoreKeeper(scoreKeeper)
-
+    scoreKeeper.reset(game)
+    
     # this call loads the camera capture and waits a few frames for the picture to stabilize
     get_dart.InitGetDart()
     
@@ -209,6 +208,7 @@ def startEngine():
 
 
 if __name__ == "__main__":
+    global scoreKeeper
     print "Main is running"
     correctScore = threading.Event()
     updateUI = threading.Event()
@@ -217,6 +217,11 @@ if __name__ == "__main__":
     g.initCorrectScoreEvent(correctScore)
     g.initUIEvent(updateUI)
 
+    scoreKeeper = ScoreKeeper.ScoreKeeper()
+    #passing the score keeper instance to the GUI
+    g.initScoreKeeper(scoreKeeper)
+
+    
     g.start()
     
     # don't know where's a good place to put this, but will put it here for now
