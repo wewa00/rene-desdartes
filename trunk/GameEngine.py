@@ -19,6 +19,7 @@ CMD_EXIT = 0
 CMD_RECAL = 1
 CMD_CORRECT = 2
 CMD_STARTGAME = 3
+CMD_MISS = 4
 
 difficulty = 10
 player_switch_wait_time = 0.1#2
@@ -169,30 +170,32 @@ class DartGame:
     
 def playGame (settings):
     global scoreKeeper
-    
+    global dartCaptureThread
     print "Starting Game"
     game = DartGame(settings)
     AIPlayer = AI.AIOpponent(difficulty)
-    scoreKeeper.reset(game)
     
-    # this call loads the camera capture and waits a few frames for the picture to stabilize
-    get_dart.InitGetDart()
-    t = DartCaptureThread(game, AIPlayer)
-    t.start()
+    scoreKeeper.reset(game)
+    updateUI.set()
+    
+    dartCaptureThread.setGame(game)
+    dartCaptureThread.setAI(AIPlayer)
+    dartCaptureThread.status = -1;
+    
     
     while ( game.stillPlaying == True ):
 ##        Now uses get_dart.GetDart()
         
         #if a dart has been recorded
-        if t.status == 0:
+        if dartCaptureThread.status == 0:
             # uncomment to get it to print out dart throw
-            t.throwResult.printThrow()
+            dartCaptureThread.throwResult.printThrow()
             # check correctScore event
             
             # Update the score
             if game.gameType == 1:
                 #print "====Normal mode===="
-                game.updateScoreGame(t.throwResult)
+                game.updateScoreGame(dartCaptureThread.throwResult)
                 if game.currentPlayer.name == "CPU1" or game.currentPlayer.name == "CPU2":
                     time.sleep(ai_throw_wait_time)
             else:
@@ -200,7 +203,8 @@ def playGame (settings):
                 game.updateScorePractice(t.throwResult)
             
             #change this status flag to trigger new dart capture
-            t.status = -1
+            if game.stillPlaying == True:
+                dartCaptureThread.status = -1
     
         if uiCommandStream.Event.isSet():
             if uiCommandStream.Command == CMD_RECAL:
@@ -210,9 +214,25 @@ def playGame (settings):
                 print "Correct the score!"
             elif uiCommandStream.Command == CMD_EXIT:
                 print "EXITING"
-                exit()
+                dartCaptureThread.status = 1
+                print dartCaptureThread.isAlive()
+                sys.exit(0)
+            elif uiCommandStream.Command == CMD_MISS:
+                missedThrow = dartThrow()
+                missedThrow.base = 0
+                missedThrow.multiplies = 0
+                missedThrow.magnitude = 700
+                missedThrow.angle = 5.6
+            
+                # Update the score
+                if game.gameType == 1:
+                    #print "====Normal mode===="
+                    game.updateScoreGame(missedThrow)
+                else:
+                    #print "====Practice mode===="
+                    game.updateScorePractice(missedThrow)
             else:
-                print "BLAH"
+                print "Unknown Command"
                 print uiCommandStream.Command
             uiCommandStream.clear()
     
@@ -233,21 +253,25 @@ class UICommandStream(object):
         self.Command = -1
         
     def set(self, command):
-        print command
         self.Command = command
         self.Event.set()
 
 class DartCaptureThread (threading.Thread):
-    def __init__ (self, game, AIPlayer):
+    def __init__ (self):
         print "DART INIT"
         threading.Thread.__init__(self)
-        self.game = game
-        self.AIPlayer = AIPlayer
-        self.status = -1
+        self.status = 0
         self.throwResult = None
         
     def run(self):
         while 1:
+            #prevent processing of a new dart until this one has been recorded
+            while self.status == 0:
+                pass
+                
+            if self.status == 1:
+                break
+                
             if self.game.currentPlayer.name == "CPU1" or self.game.currentPlayer.name == "CPU2":
                 self.throwResult = self.AIPlayer.generateThrow(self.game.currentPlayer.score, self.game.dartsLeft)
             else:
@@ -255,9 +279,11 @@ class DartCaptureThread (threading.Thread):
                 time.sleep(0.1)
             self.status = 0
             
-            #prevent processing of a new dart until this one has been recorded
-            while self.status == 0:
-                pass
+    def setAI(self, AIPlayer):
+        self.AIPlayer = AIPlayer
+        
+    def setGame(self, game):
+        self.game = game
             
         
 if __name__ == "__main__":
@@ -265,6 +291,7 @@ if __name__ == "__main__":
     commandStream = threading.Event()
     updateUI = threading.Event()
     
+    global g
     g = GUImodule.GUIThread()
     
     global uiCommandStream
@@ -282,6 +309,12 @@ if __name__ == "__main__":
     
     # don't know where's a good place to put this, but will put it here for now
     calibration.Calibration()
+    
+    # this call loads the camera capture and waits a few frames for the picture to stabilize
+    global dartCaptureThread
+    get_dart.InitGetDart()
+    dartCaptureThread = DartCaptureThread()
+    dartCaptureThread.start()
     
     while 1:  
         while 1:
