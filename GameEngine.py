@@ -22,8 +22,8 @@ CMD_STARTGAME = 3
 CMD_MISS = 4
 
 difficulty = 10
-player_switch_wait_time = 0.1#2
-ai_throw_wait_time = 0.1#1.7
+player_switch_wait_time = 2
+ai_throw_wait_time = 1.7
 
 # just a sample class so I can "create" dartThrows with the get throw function
 class dartThrow:
@@ -40,7 +40,7 @@ class dartThrow:
 class settings:
     def __init__(self):
         self.playerOne = "Player1"
-        self.playerTwo = "CPU1"
+        self.playerTwo = "Player2"
         self.gameType = 1 #1 is normal, 2 is practice
 
 ##Use get_dart.GetDart() instead
