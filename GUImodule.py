@@ -10,12 +10,13 @@ import ScoreKeeper
 CMD_EXIT = 0
 CMD_RECAL = 1
 CMD_CORRECT = 2
+CMD_STARTGAME = 3
 
 
 
 EVT_RESULT_ID = wx.NewId()
-EVT_STARTLISTENER_ID = wx.NewId()
-EVT_STOPLISTENER_ID = wx.NewId()
+EVT_STARTGAME_ID = wx.NewId()
+EVT_STOPGAME_ID = wx.NewId()
 EVT_RECALLISTENER_ID = wx.NewId()
 
 DARTBOARD_REFMAG = 380
@@ -446,8 +447,8 @@ class AppGUI(wx.App):
         menuBar = wx.MenuBar()
         fileMenu = wx.Menu()
         
-        #fileMenu.Append(EVT_STARTLISTENER_ID, "&New Game", "Starts a new game")
-        #self.Bind(wx.EVT_MENU, self.StartGame, id=EVT_STARTLISTENER_ID)
+        fileMenu.Append(EVT_STARTGAME_ID, "&New Game", "Starts a new game")
+        self.Bind(wx.EVT_MENU, self.StartGame, id=EVT_STARTGAME_ID)
         
         #fileMenu.Append(EVT_STOPLISTENER_ID, "&End Game", "Ends this game")
         #self.Bind(wx.EVT_MENU, self.StopGame, id=EVT_STOPLISTENER_ID)
@@ -482,12 +483,13 @@ class AppGUI(wx.App):
         self.frame = frame 
         return True
                
-#    def StartGame (self, event):
-#        """Start second thread for listening to events"""
-#        if not self.listener: #only have one listener
-#            #self.status.SetLabel('Listening')
-#            print 'listening'
-#            self.listener = ListenerThread(self)
+    def StartGame (self, event):
+        """Start second thread for listening to events"""
+        if not self.listener: #only have one listener
+            #self.status.SetLabel('Listening')
+            print 'listening'
+            self.listener = ListenerThread(self)
+        uiCommandStream.set(CMD_STARTGAME)
     
 #    def StopGame (self, event):
 #        """Stop second thread for listening to events"""
