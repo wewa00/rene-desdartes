@@ -11,8 +11,7 @@ CMD_EXIT = 0
 CMD_RECAL = 1
 CMD_CORRECT = 2
 CMD_STARTGAME = 3
-
-
+CMD_MISS = 4
 
 EVT_RESULT_ID = wx.NewId()
 EVT_STARTGAME_ID = wx.NewId()
@@ -66,27 +65,40 @@ class MyCanvas(wx.Panel):
         self.boardDartsFlag = "p1"
         self.boardDarts = [None, None, None]
         
+        font = wx.Font(30, wx.SWISS, wx.NORMAL, wx.FONTWEIGHT_BOLD, False, u'Comic Sans MS')
+        
         #score labels
-        self.p1 = wx.StaticText(self, -1, str(0), (30, 60))
-        self.p2 = wx.StaticText(self, -1, str(0), (780, 60))
+        self.p1 = wx.StaticText(self, -1, str(0), (40, 80))
+        self.p2 = wx.StaticText(self, -1, str(0), (790, 80))
+        self.p1.SetFont(font)
+        self.p1.SetForegroundColour((255,255,255))
+        self.p1.SetBackgroundColour('#389442')
+        self.p2.SetFont(font)
+        self.p2.SetForegroundColour((255,255,255))
+        self.p2.SetBackgroundColour('#389442')
         
         #score buttons
         self.buttons = []
         
         bp1ID = wx.NewId()
-        bp1 = wx.Button(self, bp1ID, "previous", (30, 90))
+        bp1 = wx.Button(self, bp1ID, "Previous Dart Set", (30, 140))
         self.Bind(wx.EVT_BUTTON, self.OnClick, bp1)
         self.buttons.append(bp1ID)
         
         bp2ID = wx.NewId()
-        bp2 = wx.Button(self, bp2ID, "previous", (780, 90))
+        bp2 = wx.Button(self, bp2ID, "Previous Dart Set", (780, 140))
         self.Bind(wx.EVT_BUTTON, self.OnClick, bp2)
         self.buttons.append(bp2ID)
         
         currID = wx.NewId()
-        curr = wx.Button(self, currID, "current", (250, 0))
+        curr = wx.Button(self, currID, "Current Dart Set", (250, 0))
         self.Bind(wx.EVT_BUTTON, self.OnClick, curr) 
         self.buttons.append(currID)
+        
+        missID = wx.NewId()
+        missbtn = wx.Button(self, missID, "Missed Dart", (250, 25))
+        self.Bind(wx.EVT_BUTTON, self.OnClick, missbtn) 
+        self.buttons.append(missbtn)
         
         # dart ids
         self.objids = []
@@ -263,12 +275,15 @@ class MyCanvas(wx.Panel):
         dc.SetBackground(bg)
         dc.Clear()
         
+        font = wx.Font(20, wx.SWISS, wx.NORMAL, wx.FONTWEIGHT_BOLD, False, u'Comic Sans MS')
+        dc.SetFont(font)
+        
         rect = wx.Rect(0, 0, 250,500)
         rect.SetPosition((0, 0))
-        dc.GradientFillLinear(rect, '#2A6E31', '#389442', wx.NORTH)
+        dc.GradientFillLinear(rect, '#389442', '#389442', wx.NORTH)
         dc.DrawText("Player 1", 30, 40)
         rect.SetPosition((750, 0))
-        dc.GradientFillLinear(rect, '#2A6E31', '#389442', wx.NORTH)
+        dc.GradientFillLinear(rect, '#389442', '#389442', wx.NORTH)
         dc.DrawText("Player 2", 780, 40)
         rect.SetPosition((20, 80))
         
@@ -322,11 +337,14 @@ class MyCanvas(wx.Panel):
                 dc.DrawArc(x1, y1, x2, y2, x, y)
                 #sector 15 is the top
         
+        font = wx.Font(20, wx.SWISS, wx.NORMAL, wx.FONTWEIGHT_BOLD, False, u'Comic Sans MS')
+        dc.SetFont(font)
+        
         #Draw the numbers
         for sector in range(20):
             theta = (2*sector-1)*pi/20 + DARTBOARD_REFANG
-            x1 = x+19.0/17.0*(DARTBOARD_RADII[0]+DARTBOARD_RADII[1])/2*cos(theta)
-            y1 = y-19.0/17.0*(DARTBOARD_RADII[0]+DARTBOARD_RADII[1])/2*sin(theta)
+            x1 = x+19.0/17.0*(DARTBOARD_RADII[0]+DARTBOARD_RADII[1])/2*cos(theta)-12
+            y1 = y-19.0/17.0*(DARTBOARD_RADII[0]+DARTBOARD_RADII[1])/2*sin(theta)-15
             colour = '#FFFFFF'
             dc.SetTextForeground(colour)
             dc.DrawText(`DART_NUM[sector]`, x1, y1)
@@ -385,8 +403,10 @@ class MyCanvas(wx.Panel):
                 x = DART_CENTER_X + self.boardDarts[i].magnitude/DARTBOARD_REFMAG*190*cos(self.boardDarts[i].angle)
                 y = DART_CENTER_Y - self.boardDarts[i].magnitude/DARTBOARD_REFMAG*190*sin(self.boardDarts[i].angle)
                 self.MoveDart(i+3, (x,y),True)        
-        else:
+        elif event.GetId() == self.buttons[2]:
             self.MakeCurrent()
+        else:
+            uiCommandStream.set(CMD_MISS)            
             
 class ListenerThread(threading.Thread):
     def __init__(self, parent_window):
@@ -505,6 +525,9 @@ class AppGUI(wx.App):
     
     def OnClose (self, event):
         uiCommandStream.set(CMD_EXIT)
+        print "Exit GUI"
+        exit()
+        
         
     def OnListen(self, event):
         """Listened"""
