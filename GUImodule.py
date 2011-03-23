@@ -7,9 +7,16 @@ import thread
 import random
 import ScoreKeeper
 
+CMD_EXIT = 0
+CMD_RECAL = 1
+CMD_CORRECT = 2
+
+
+
 EVT_RESULT_ID = wx.NewId()
 EVT_STARTLISTENER_ID = wx.NewId()
 EVT_STOPLISTENER_ID = wx.NewId()
+EVT_RECALLISTENER_ID = wx.NewId()
 
 DARTBOARD_REFMAG = 380
 DARTBOARD_REFANG = pi/20
@@ -185,7 +192,7 @@ class MyCanvas(wx.Panel):
                         scoreKeeper.currentDartSet[dartIndex].multiplier = mul
                         scoreKeeper.currentDartSet[dartIndex].magnitude = m
                         scoreKeeper.currentDartSet[dartIndex].angle = a
-                    correctScore.set()
+                    uiCommandStream.set(CMD_CORRECT)
                 self.dragid = -1
     
     def GetDartParameters(self, p ):
@@ -445,6 +452,9 @@ class AppGUI(wx.App):
         #fileMenu.Append(EVT_STOPLISTENER_ID, "&End Game", "Ends this game")
         #self.Bind(wx.EVT_MENU, self.StopGame, id=EVT_STOPLISTENER_ID)
         
+        fileMenu.Append(EVT_RECALLISTENER_ID, "&Recalibrate", "Recalibrates the game")
+        self.Bind(wx.EVT_MENU, self.OnRecalibrate, id=EVT_RECALLISTENER_ID)
+        
         fileMenu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit Application")
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
         
@@ -486,12 +496,13 @@ class AppGUI(wx.App):
 #            print 'Stop'
 #            self.listener.close()
 #            self.listener = None
+    def OnRecalibrate(self, event):
+        """Recalibrate the camera"""
+        uiCommandStream.set(CMD_RECAL)
+            
     
     def OnClose (self, event):
-        if self.listener:
-            self.listener.close() #close the listener thread
-            print 'Close'
-        self.frame.Close()
+        uiCommandStream.set(CMD_EXIT)
         
     def OnListen(self, event):
         """Listened"""
@@ -529,9 +540,9 @@ class GUIThread(threading.Thread):
         global updateUI
         updateUI = event
         
-    def initCorrectScoreEvent(self, event):
-        global correctScore
-        correctScore = event
+    def initUICommandStream(self, object):
+        global uiCommandStream
+        uiCommandStream = object
     
     def initScoreKeeper(self, object):
         global scoreKeeper
