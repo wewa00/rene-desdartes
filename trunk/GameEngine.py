@@ -18,6 +18,7 @@ from math import pi
 CMD_EXIT = 0
 CMD_RECAL = 1
 CMD_CORRECT = 2
+CMD_STARTGAME = 3
 
 difficulty = 10
 player_switch_wait_time = 2
@@ -253,6 +254,12 @@ if __name__ == "__main__":
     calibration.Calibration()
     
     while 1:  
+        while 1:
+            if uiCommandStream.Event.isSet():
+                if uiCommandStream.Command == CMD_STARTGAME:
+                    uiCommandStream.clear()
+                    break
+    
         setting = settings()
         playGame(setting)
     
