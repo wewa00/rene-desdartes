@@ -21,8 +21,8 @@ CMD_CORRECT = 2
 CMD_STARTGAME = 3
 
 difficulty = 10
-player_switch_wait_time = 2
-ai_throw_wait_time = 1.7
+player_switch_wait_time = 0.1#2
+ai_throw_wait_time = 0.1#1.7
 
 # just a sample class so I can "create" dartThrows with the get throw function
 class dartThrow:
@@ -39,7 +39,7 @@ class dartThrow:
 class settings:
     def __init__(self):
         self.playerOne = "Player1"
-        self.playerTwo = "Player2"
+        self.playerTwo = "CPU1"
         self.gameType = 1 #1 is normal, 2 is practice
 
 ##Use get_dart.GetDart() instead
@@ -177,37 +177,44 @@ def playGame (settings):
     
     # this call loads the camera capture and waits a few frames for the picture to stabilize
     get_dart.InitGetDart()
+    t = DartCaptureThread(game, AIPlayer)
+    t.start()
     
     while ( game.stillPlaying == True ):
 ##        Now uses get_dart.GetDart()
-        if game.currentPlayer.name == "CPU1" or game.currentPlayer.name == "CPU2":
-            throwResult = AIPlayer.generateThrow(game.currentPlayer.score, game.dartsLeft)
-        else:
-            throwResult = get_dart.GetDart()#getThrow()
-            time.sleep(0.1)
-
-        # uncomment to get it to print out dart throw
-        throwResult.printThrow()
-        # check correctScore event
+        
+        #if a dart has been recorded
+        if t.status == 0:
+            # uncomment to get it to print out dart throw
+            t.throwResult.printThrow()
+            # check correctScore event
+            
+            # Update the score
+            if game.gameType == 1:
+                #print "====Normal mode===="
+                game.updateScoreGame(t.throwResult)
+                if game.currentPlayer.name == "CPU1" or game.currentPlayer.name == "CPU2":
+                    time.sleep(ai_throw_wait_time)
+            else:
+                #print "====Practice mode===="
+                game.updateScorePractice(t.throwResult)
+            
+            #change this status flag to trigger new dart capture
+            t.status = -1
+    
         if uiCommandStream.Event.isSet():
             if uiCommandStream.Command == CMD_RECAL:
-                print "RECAL"
+                print "Recalibration:"
+                #calibration.Calibration()
             elif uiCommandStream.Command == CMD_CORRECT:
                 print "Correct the score!"
             elif uiCommandStream.Command == CMD_EXIT:
                 print "EXITING"
                 exit()
-            uiCommandStream.clear()
-        else:
-            # Update the score
-            if game.gameType == 1:
-                #print "====Normal mode===="
-                game.updateScoreGame(throwResult)
-                if game.currentPlayer.name == "CPU1" or game.currentPlayer.name == "CPU2":
-                    time.sleep(ai_throw_wait_time)
             else:
-                #print "====Practice mode===="
-                game.updateScorePractice(throwResult)
+                print "BLAH"
+                print uiCommandStream.Command
+            uiCommandStream.clear()
     
     print "THE WINNER IS " + game.currentPlayer.name
 
@@ -226,8 +233,32 @@ class UICommandStream(object):
         self.Command = -1
         
     def set(self, command):
-        self.Event.set()
+        print command
         self.Command = command
+        self.Event.set()
+
+class DartCaptureThread (threading.Thread):
+    def __init__ (self, game, AIPlayer):
+        print "DART INIT"
+        threading.Thread.__init__(self)
+        self.game = game
+        self.AIPlayer = AIPlayer
+        self.status = -1
+        self.throwResult = None
+        
+    def run(self):
+        while 1:
+            if self.game.currentPlayer.name == "CPU1" or self.game.currentPlayer.name == "CPU2":
+                self.throwResult = self.AIPlayer.generateThrow(self.game.currentPlayer.score, self.game.dartsLeft)
+            else:
+                self.throwResult = get_dart.GetDart()#getThrow()
+                time.sleep(0.1)
+            self.status = 0
+            
+            #prevent processing of a new dart until this one has been recorded
+            while self.status == 0:
+                pass
+            
         
 if __name__ == "__main__":
     print "Main is running"
@@ -246,7 +277,6 @@ if __name__ == "__main__":
     global scoreKeeper
     scoreKeeper = ScoreKeeper.ScoreKeeper()
     g.initScoreKeeper(scoreKeeper)
-
     
     g.start()
     
