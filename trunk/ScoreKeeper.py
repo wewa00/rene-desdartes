@@ -11,11 +11,8 @@ class Singleton(type):
         
 class ScoreKeeper(object):
     __metaclass__ = Singleton
-    def __init__ (self):
-        print  "INIT SCOREKEEPER-------------"
         
     def reset (self, game):
-        print "RESET-----------------"
         self.playerOne = game.playerOne
         self.playerTwo = game.playerTwo
         self.playerOne.throwHistory = [] 

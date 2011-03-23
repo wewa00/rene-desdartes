@@ -15,6 +15,10 @@ import AI
 import time
 from math import pi
 
+CMD_EXIT = 0
+CMD_RECAL = 1
+CMD_CORRECT = 2
+
 difficulty = 10
 player_switch_wait_time = 2
 ai_throw_wait_time = 1.7
@@ -184,10 +188,15 @@ def playGame (settings):
         # uncomment to get it to print out dart throw
         throwResult.printThrow()
         # check correctScore event
-        if correctScore.isSet():
-            # will figure this out later
-            print "Correct the score!"
-            correctScore.clear()
+        if uiCommandStream.Event.isSet():
+            if uiCommandStream.Command == CMD_RECAL:
+                print "RECAL"
+            elif uiCommandStream.Command == CMD_CORRECT:
+                print "Correct the score!"
+            elif uiCommandStream.Command == CMD_EXIT:
+                print "EXITING"
+                exit()
+            uiCommandStream.clear()
         else:
             # Update the score
             if game.gameType == 1:
@@ -206,19 +215,35 @@ def startEngine():
     setting = settings()
     playGame(setting)
 
-
+class UICommandStream(object):
+    def __init__ (self):
+        self.Event = threading.Event()
+        self.Command = -1
+        
+    def clear(self):
+        self.Event.clear()
+        self.Command = -1
+        
+    def set(self, command):
+        self.Event.set()
+        self.Command = command
+        
 if __name__ == "__main__":
-    global scoreKeeper
     print "Main is running"
-    correctScore = threading.Event()
+    commandStream = threading.Event()
     updateUI = threading.Event()
     
     g = GUImodule.GUIThread()
-    g.initCorrectScoreEvent(correctScore)
+    
+    global uiCommandStream
+    uiCommandStream = UICommandStream()
+    g.initUICommandStream(uiCommandStream)
+    
     g.initUIEvent(updateUI)
 
-    scoreKeeper = ScoreKeeper.ScoreKeeper()
     #passing the score keeper instance to the GUI
+    global scoreKeeper
+    scoreKeeper = ScoreKeeper.ScoreKeeper()
     g.initScoreKeeper(scoreKeeper)
 
     
@@ -227,9 +252,6 @@ if __name__ == "__main__":
     # don't know where's a good place to put this, but will put it here for now
     calibration.Calibration()
     
-    # start the engine in a thread!
-    # buggy, it crashes at various points, don't know why
-    # thread.start_new_thread(startEngine,())
     while 1:  
         setting = settings()
         playGame(setting)
